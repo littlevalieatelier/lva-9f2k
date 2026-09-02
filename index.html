@@ -22,6 +22,10 @@
   .stat .n { font-size: 20px; font-weight: 600; }
   .stat .l { font-size: 10px; color: #22301F; opacity: 0.65; text-transform: uppercase; letter-spacing: 0.04em; }
 
+  .filter-row { display: flex; gap: 6px; padding: 10px 16px 0; flex-wrap: wrap; }
+  .filter-btn { font-size: 11px; padding: 6px 12px; border-radius: 999px; border: 1px solid #e5ddc8; background: #FAF5EA; color: #22301F; opacity: 0.6; cursor: pointer; }
+  .filter-btn.active { opacity: 1; font-weight: 600; background: #22301F; color: #FAF5EA; border-color: transparent; }
+
   .list { padding: 8px 16px; display: flex; flex-direction: column; gap: 10px; }
   .empty { text-align: center; padding: 60px 20px; color: #22301F; opacity: 0.55; font-size: 14px; }
 
@@ -30,6 +34,7 @@
   .code { display: inline-block; font-size: 10px; font-weight: 600; color: #C08A2E; background: #FAF5EA; border: 1px solid #eee2c9; border-radius: 5px; padding: 2px 6px; letter-spacing: 0.03em; margin-bottom: 4px; }
   .card-title { font-weight: 600; font-size: 15px; }
   .card-hook { font-size: 13px; color: #22301F; opacity: 0.7; margin-top: 3px; font-style: italic; }
+  .card-notes { font-size: 12px; color: #22301F; opacity: 0.6; margin-top: 6px; white-space: pre-wrap; }
   .del { background: none; border: none; color: #22301F; opacity: 0.35; font-size: 16px; cursor: pointer; padding: 2px 6px; }
   .del:hover { opacity: 0.8; }
 
@@ -101,6 +106,7 @@
     <p>Little Valie Atelier — Tried &amp; Tested</p>
   </header>
   <div class="stats" id="stats"></div>
+  <div class="filter-row" id="filterRow"></div>
   <div class="list" id="list"><div class="loading">Loading your reels…</div></div>
 </div>
 
@@ -117,6 +123,10 @@
     <div class="field">
       <label>Hook line</label>
       <textarea id="fHook" placeholder="I run a slow-design brand... and then this showed up."></textarea>
+    </div>
+    <div class="field">
+      <label>Notes</label>
+      <textarea id="fNotes" placeholder="Props needed, filming location, edit ideas..."></textarea>
     </div>
     <div class="modal-actions">
       <button class="btn-cancel" onclick="closeModal()">Cancel</button>
@@ -158,6 +168,7 @@ function showApp() {
 const STAGES = ['Idea','Scripted','Filming','Editing','Posted'];
 let reels = [];
 let nextNum = 1;
+let stageFilter = 'all';
 
 function loadReels() {
   try {
@@ -186,6 +197,7 @@ function persist() {
 function openModal() {
   document.getElementById('fTitle').value = '';
   document.getElementById('fHook').value = '';
+  document.getElementById('fNotes').value = '';
   document.getElementById('modalBg').classList.add('open');
 }
 function closeModal() {
@@ -199,8 +211,9 @@ function saveReel() {
     return;
   }
   const hook = document.getElementById('fHook').value.trim();
+  const notes = document.getElementById('fNotes').value.trim();
   const code = 'LVA-' + String(nextNum).padStart(3, '0');
-  reels.unshift({ id: Date.now().toString(), code, title, hook, stage: 0, createdAt: new Date().toISOString() });
+  reels.unshift({ id: Date.now().toString(), code, title, hook, notes, stage: 0, createdAt: new Date().toISOString() });
   nextNum += 1;
   persist();
   try {
@@ -225,9 +238,15 @@ function deleteReel(id) {
   render();
 }
 
+function setFilter(stage) {
+  stageFilter = stage;
+  render();
+}
+
 function render() {
   const list = document.getElementById('list');
   const stats = document.getElementById('stats');
+  const filterRow = document.getElementById('filterRow');
 
   const posted = reels.filter(r => r.stage === 4).length;
   const inProgress = reels.length - posted;
@@ -237,18 +256,30 @@ function render() {
     <div class="stat"><div class="n">${posted}</div><div class="l">Posted</div></div>
   `;
 
+  filterRow.innerHTML = `
+    <button class="filter-btn ${stageFilter === 'all' ? 'active' : ''}" onclick="setFilter('all')">All</button>
+    ${STAGES.map((s, i) => `<button class="filter-btn ${stageFilter === i ? 'active' : ''}" onclick="setFilter(${i})">${s}</button>`).join('')}
+  `;
+
+  const filtered = stageFilter === 'all' ? reels : reels.filter(r => r.stage === stageFilter);
+
   if (reels.length === 0) {
     list.innerHTML = '<div class="empty">No reels yet. Tap "New reel" to plan your first one.</div>';
     return;
   }
+  if (filtered.length === 0) {
+    list.innerHTML = '<div class="empty">No reels in this stage.</div>';
+    return;
+  }
 
-  list.innerHTML = reels.map(r => `
+  list.innerHTML = filtered.map(r => `
     <div class="card">
       <div class="card-top">
         <div>
           <div class="code">${r.code || 'LVA-000'}</div>
           <div class="card-title">${escapeHtml(r.title)}</div>
           ${r.hook ? `<div class="card-hook">"${escapeHtml(r.hook)}"</div>` : ''}
+          ${r.notes ? `<div class="card-notes">${escapeHtml(r.notes)}</div>` : ''}
         </div>
         <button class="del" onclick="deleteReel('${r.id}')" aria-label="Delete">&times;</button>
       </div>
