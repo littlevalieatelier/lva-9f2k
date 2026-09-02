@@ -8,89 +8,205 @@
 <meta name="theme-color" content="#22301F">
 <title>Reel tracker</title>
 <style>
-  @import url('https://fonts.googleapis.com/css2?family=Bebas+Neue&family=Archivo:wght@400;500;600&display=swap');
+  @import url('https://fonts.googleapis.com/css2?family=Bebas+Neue&family=Archivo:wght@400;500;600;700&display=swap');
+  @import url('https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@20..48,400,0..1,0&display=block');
+
+  :root {
+    /* --- M3 color roles, tonal palette generated from the brand hexes via HCT --- */
+    --md-primary: #C08A2E;
+    --md-on-primary: #22301F; /* Pine, literal — verified 4.58:1 on Gold (white only hits 3.04:1, fails 4.5:1) */
+    --md-primary-container: #FFDDB0;
+    --md-on-primary-container: #281800;
+
+    --md-secondary: #C97A5D;
+    --md-on-secondary: #1A1C19;
+    --md-secondary-container: #FFDBCF;
+    --md-on-secondary-container: #380D00;
+
+    --md-tertiary: #22301F;
+    --md-on-tertiary: #FFFFFF;
+    --md-tertiary-container: #D6E8CE;
+    --md-on-tertiary-container: #111F0F;
+
+    --md-surface: #FAF5EA;
+    --md-on-surface: #22301F;
+    --md-surface-variant: #F1E9D6;
+    --md-on-surface-variant: #42493F;
+    --md-surface-container: #FFFFFF;
+    --md-surface-container-hover: #FCFAF7;
+    --md-surface-container-press: #FBF8F2;
+
+    --md-outline: #73796F;
+    --md-outline-variant: #C2C8BC;
+
+    --md-inverse-surface: #2F312D;
+    --md-inverse-on-surface: #F1F1EB;
+    --md-inverse-primary: #F9BC5B; /* lighter Gold tint for text on dark Pine — verified 8.19:1 on #22301F, 6.86:1 on gate input */
+    --md-error-on-dark: #D4957D; /* lighter Terracotta tint for error text on dark Pine — verified 5.56:1 on #22301F */
+
+    /* --- Elevation: shadow + subtle primary-tinted surface, per M3 --- */
+    --md-elevation-0: none;
+    --md-elevation-1: 0 1px 2px rgba(24,18,4,.15), 0 1px 3px 1px rgba(24,18,4,.10);
+    --md-elevation-2: 0 1px 2px rgba(24,18,4,.20), 0 2px 6px 2px rgba(24,18,4,.12);
+    --md-elevation-3: 0 1px 3px rgba(0,0,0,.30), 0 4px 8px 3px rgba(0,0,0,.15);
+    --md-elevation-4: 0 2px 3px rgba(0,0,0,.30), 0 6px 12px 4px rgba(0,0,0,.18);
+
+    /* --- Motion --- */
+    --md-easing-standard: cubic-bezier(0.2, 0, 0, 1);
+    --md-duration-short: 200ms;
+    --md-duration-medium: 280ms;
+
+    /* --- Type scale: M3 roles adapted to this app's compact mobile scale --- */
+    --type-headline-medium: 400 28px/1.15 'Bebas Neue', sans-serif;
+    --type-headline-small: 400 clamp(24px, 5vw, 30px)/1.15 'Bebas Neue', sans-serif;
+    --type-title-large: 600 20px/28px 'Archivo', sans-serif;
+    --type-title-medium: 600 15px/22px 'Archivo', sans-serif;
+    --type-body-large: 400 15px/22px 'Archivo', sans-serif;
+    --type-body-medium: 400 13px/20px 'Archivo', sans-serif;
+    --type-body-small: 400 12px/16px 'Archivo', sans-serif;
+    --type-label-large: 600 14px/20px 'Archivo', sans-serif;
+    --type-label-medium: 600 11px/16px 'Archivo', sans-serif;
+    --type-label-small: 700 10px/14px 'Archivo', sans-serif;
+  }
+
   * { box-sizing: border-box; margin: 0; padding: 0; }
-  body { font-family: 'Archivo', sans-serif; background: #FAF5EA; color: #22301F; min-height: 100vh; padding-left: env(safe-area-inset-left); padding-right: env(safe-area-inset-right); }
-  #app { max-width: 480px; margin: 0 auto; padding-bottom: 100px; }
+  body { font: var(--type-body-large); font-family: 'Archivo', sans-serif; background: var(--md-surface); color: var(--md-on-surface); min-height: 100vh; padding-left: env(safe-area-inset-left); padding-right: env(safe-area-inset-right); }
+  #app { max-width: 480px; margin: 0 auto; padding-bottom: 110px; }
 
-  header { background: #22301F; padding: 20px 20px 16px; padding-top: calc(20px + env(safe-area-inset-top)); position: sticky; top: 0; z-index: 5; }
+  .material-symbols-outlined {
+    font-family: 'Material Symbols Outlined';
+    font-weight: normal; font-style: normal;
+    font-size: 20px; line-height: 1; letter-spacing: normal; text-transform: none;
+    display: inline-block; white-space: nowrap; word-wrap: normal; direction: ltr;
+    -webkit-font-smoothing: antialiased;
+  }
+
+  header { background: var(--md-tertiary); padding: 24px 16px 16px; padding-top: calc(24px + env(safe-area-inset-top)); position: sticky; top: 0; z-index: 5; box-shadow: var(--md-elevation-1); }
   .header-top { display: flex; justify-content: space-between; align-items: center; gap: 8px; }
-  header h1 { font-family: 'Bebas Neue', sans-serif; letter-spacing: 0.03em; font-size: clamp(24px, 5vw, 30px); color: #FAF5EA; }
-  header p { font-size: 12px; color: #C08A2E; margin-top: 2px; }
-  .signout { background: none; border: 1px solid #445240; color: #C08A2E; font-size: 11px; padding: 4px 10px; border-radius: 999px; cursor: pointer; font-family: 'Archivo'; }
-  .signout:hover { opacity: 0.8; }
+  header h1 { font: var(--type-headline-small); letter-spacing: 0.03em; color: var(--md-surface); }
+  header p { font: var(--type-body-small); color: rgba(250,245,234,0.65); margin-top: 2px; }
+  .signout { display: inline-flex; align-items: center; gap: 4px; min-height: 40px; background: none; border: 1px solid #445240; color: rgba(250,245,234,0.65); font: var(--type-label-medium); padding: 0 12px; border-radius: 999px; cursor: pointer; transition: background-color var(--md-duration-short) var(--md-easing-standard); }
+  .signout:hover { background: rgba(250,245,234,0.08); }
+  .signout .material-symbols-outlined { font-size: 16px; }
 
-  .offline-banner { background: #F1E9D6; color: #22301F; font-size: 12px; text-align: center; padding: 8px 16px; }
+  .offline-banner { background: var(--md-surface-variant); color: var(--md-on-surface-variant); font: var(--type-body-small); text-align: center; padding: 8px 16px; }
 
-  .stats { display: flex; gap: 8px; padding: 14px 16px 4px; }
-  .stat { flex: 1; background: #F1E9D6; border-radius: 10px; padding: 10px 8px; text-align: center; }
-  .stat .n { font-size: 20px; font-weight: 600; }
-  .stat .l { font-size: 10px; color: #22301F; opacity: 0.65; text-transform: uppercase; letter-spacing: 0.04em; }
+  .stats { display: flex; gap: 8px; padding: 16px 16px 8px; }
+  .stat { flex: 1; background: var(--md-surface-variant); border-radius: 12px; padding: 16px 8px; text-align: center; box-shadow: var(--md-elevation-1); }
+  .stat .n { font: var(--type-title-large); font-size: 20px; }
+  .stat .l { font: var(--type-label-small); color: var(--md-on-surface-variant); text-transform: uppercase; letter-spacing: 0.04em; }
 
-  .filter-row { display: flex; gap: 6px; padding: 10px 16px 0; flex-wrap: wrap; }
-  .filter-btn { font-size: 11px; padding: 6px 12px; border-radius: 999px; border: 1px solid #e5ddc8; background: #FAF5EA; color: #22301F; opacity: 0.6; cursor: pointer; }
-  .filter-btn.active { opacity: 1; font-weight: 600; background: #22301F; color: #FAF5EA; border-color: transparent; }
+  /* --- M3 filter chips: shared by the top filter row and each card's stage selector --- */
+  .filter-row { display: flex; gap: 6px; overflow-x: auto; flex-wrap: nowrap; padding: 8px 16px 4px; -webkit-overflow-scrolling: touch; scrollbar-width: none; }
+  .filter-row::-webkit-scrollbar { display: none; }
+  .stage-row { display: flex; gap: 6px; margin-top: 16px; overflow-x: auto; padding-bottom: 2px; -webkit-overflow-scrolling: touch; scrollbar-width: none; }
+  .stage-row::-webkit-scrollbar { display: none; }
 
-  .list { padding: 8px 16px; display: flex; flex-direction: column; gap: 10px; }
-  .empty { text-align: center; padding: 60px 20px; color: #22301F; opacity: 0.55; font-size: 14px; }
+  .chip { display: inline-flex; align-items: center; gap: 4px; flex-shrink: 0; height: 40px; padding: 0 16px; border-radius: 999px; border: 1px solid var(--md-outline); background: var(--md-surface-container); color: var(--md-on-surface-variant); font: var(--type-label-large); cursor: pointer; white-space: nowrap; transition: background-color var(--md-duration-short) var(--md-easing-standard), border-color var(--md-duration-short) var(--md-easing-standard), color var(--md-duration-short) var(--md-easing-standard); }
+  .chip .chip-check { font-size: 16px; }
+  .chip.selected { background: #22301F; border-color: #22301F; color: #FAF5EA; }
+  .stage-row .chip { padding: 0 12px; font-size: 12px; }
 
-  .card { background: #fff; border: 1px solid #eee2c9; border-radius: 12px; padding: 14px; }
+  .list { padding: 8px 16px; display: flex; flex-direction: column; gap: 8px; }
+  .empty { text-align: center; padding: 60px 20px; color: var(--md-on-surface-variant); font: var(--type-body-medium); }
+
+  /* --- M3 elevated card: level 1 resting, level 2 on hover/press, medium (12dp) shape --- */
+  .card { background: var(--md-surface-container); border-radius: 12px; padding: 16px; box-shadow: var(--md-elevation-1); transition: box-shadow var(--md-duration-short) var(--md-easing-standard), background-color var(--md-duration-short) var(--md-easing-standard); }
+  .card:hover, .card:active { box-shadow: var(--md-elevation-2); background: var(--md-surface-container-hover); }
   .card-top { display: flex; justify-content: space-between; align-items: flex-start; gap: 8px; }
-  .code { display: inline-block; font-size: 10px; font-weight: 600; color: #C08A2E; background: #FAF5EA; border: 1px solid #eee2c9; border-radius: 5px; padding: 2px 6px; letter-spacing: 0.03em; margin-bottom: 4px; }
-  .card-title { font-weight: 600; font-size: 15px; }
-  .card-hook { font-size: 13px; color: #22301F; opacity: 0.7; margin-top: 3px; font-style: italic; }
-  .card-notes { font-size: 12px; color: #22301F; opacity: 0.6; margin-top: 6px; white-space: pre-wrap; }
-  .card-actions { display: flex; gap: 2px; }
-  .del, .edit { background: none; border: none; font-size: 14px; cursor: pointer; padding: 2px 6px; }
-  .del { font-size: 16px; color: #22301F; }
-  .edit { color: #C08A2E; }
-  .del:hover, .edit:hover { opacity: 0.7; }
+  .code { display: inline-block; font: var(--type-label-medium); color: var(--md-on-primary-container); background: var(--md-primary-container); border-radius: 6px; padding: 3px 8px; letter-spacing: 0.03em; margin-bottom: 4px; }
+  .card-title { font: var(--type-title-medium); }
+  .card-hook { font: var(--type-body-medium); color: var(--md-on-surface-variant); margin-top: 4px; font-style: italic; }
+  .card-notes { font: var(--type-body-small); color: var(--md-on-surface-variant); margin-top: 8px; white-space: pre-wrap; }
 
-  .stage-row { display: flex; gap: 4px; margin-top: 12px; }
-  .stage-btn { flex: 1; font-size: 10px; padding: 7px 2px; border-radius: 6px; border: 1px solid #e5ddc8; background: #FAF5EA; color: #22301F; opacity: 0.5; cursor: pointer; text-align: center; }
-  .stage-btn.active { opacity: 1; font-weight: 600; border-color: transparent; }
-  .stage-btn.s0.active { background: #F1E9D6; }
-  .stage-btn.s1.active { background: #e9d5b0; }
-  .stage-btn.s2.active { background: #C97A5D; color: #fff; }
-  .stage-btn.s3.active { background: #C08A2E; color: #fff; }
-  .stage-btn.s4.active { background: #22301F; color: #FAF5EA; }
+  .card-actions { display: flex; }
+  .icon-btn { display: inline-flex; align-items: center; justify-content: center; min-width: 48px; min-height: 48px; background: none; border: none; border-radius: 999px; cursor: pointer; transition: background-color var(--md-duration-short) var(--md-easing-standard); }
+  .icon-btn:hover { background: rgba(34,48,31,0.08); }
+  .icon-btn.edit { color: var(--md-primary); }
+  .icon-btn.del { color: var(--md-on-surface); }
+  .icon-btn.edit:hover { color: #92621e; background: #f7ecd9; }
+  .icon-btn.del:hover { color: #C97A5D; background: #faece7; }
+  .icon-btn .material-symbols-outlined { font-size: 20px; }
 
-  .fab { position: fixed; bottom: 24px; left: 50%; transform: translateX(-50%); background: #C08A2E; color: #fff; border: none; border-radius: 999px; padding: 14px 28px; font-family: 'Archivo'; font-weight: 600; font-size: 14px; box-shadow: 0 4px 14px rgba(34,48,31,0.25); cursor: pointer; }
-
-  .modal-bg { display: none; position: fixed; inset: 0; background: rgba(34,48,31,0.5); align-items: flex-end; justify-content: center; z-index: 20; }
-  .modal-bg.open { display: flex; }
-  .modal { background: #FAF5EA; width: 100%; max-width: 480px; border-radius: 16px 16px 0 0; padding: 20px; }
-  .modal h2 { font-family: 'Bebas Neue'; font-size: 20px; margin-bottom: 14px; letter-spacing: 0.02em; }
-  .field { margin-bottom: 12px; }
-  .field label { display: block; font-size: 11px; text-transform: uppercase; letter-spacing: 0.04em; opacity: 0.6; margin-bottom: 4px; }
-  .field input, .field textarea, .field select { width: 100%; border: 1px solid #ddd2ae; border-radius: 8px; padding: 10px; font-family: 'Archivo'; font-size: 14px; background: #fff; color: #22301F; }
-  .field textarea { resize: none; height: 50px; }
+  /* --- M3 buttons: filled (Save / FAB), text (Cancel) --- */
+  .btn { display: inline-flex; align-items: center; justify-content: center; gap: 6px; min-height: 40px; padding: 0 24px; border-radius: 999px; border: none; font: var(--type-label-large); cursor: pointer; transition: background-color var(--md-duration-short) var(--md-easing-standard); }
+  .btn-filled { background: var(--md-primary); color: var(--md-on-primary); }
+  .btn-filled:hover { background: color-mix(in srgb, var(--md-primary) 92%, black); }
+  .btn-text { background: transparent; color: var(--md-on-surface-variant); }
+  .btn-text:hover { background: rgba(34,48,31,0.08); }
   .modal-actions { display: flex; gap: 8px; margin-top: 16px; }
-  .modal-actions button { flex: 1; padding: 12px; border-radius: 8px; border: none; font-family: 'Archivo'; font-weight: 600; font-size: 14px; cursor: pointer; }
-  .btn-cancel { background: #F1E9D6; color: #22301F; }
-  .btn-save { background: #22301F; color: #FAF5EA; }
+  .modal-actions .btn { flex: 1; }
 
-  .loading { text-align: center; padding: 40px; opacity: 0.5; font-size: 13px; }
+  /* --- Extended FAB: primary container, elevation level 3, medium-large shape --- */
+  .fab { position: fixed; left: 50%; transform: translateX(-50%); bottom: calc(24px + env(safe-area-inset-bottom)); display: inline-flex; align-items: center; gap: 8px; height: 56px; padding: 0 20px; border-radius: 16px; border: none; background: var(--md-primary); color: var(--md-on-primary); font: var(--type-label-large); box-shadow: var(--md-elevation-3); cursor: pointer; transition: box-shadow var(--md-duration-short) var(--md-easing-standard); z-index: 10; }
+  .fab:hover { box-shadow: var(--md-elevation-4); }
 
-  #gate { position: fixed; inset: 0; background: #22301F; display: flex; align-items: center; justify-content: center; z-index: 50; padding: 20px; }
+  /* --- M3 outlined text fields with floating labels --- */
+  .m3-field { position: relative; margin-bottom: 4px; }
+  .m3-field input, .m3-field textarea, .m3-field select {
+    width: 100%; border: 1px solid var(--md-outline); border-radius: 4px; padding: 20px 16px 8px;
+    font: var(--type-body-large); background: var(--md-surface-container); color: var(--md-on-surface);
+    transition: border-color var(--md-duration-short) var(--md-easing-standard);
+  }
+  .m3-field textarea { resize: none; min-height: 56px; }
+  .m3-field select { appearance: none; cursor: pointer; background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='20' height='20' viewBox='0 0 24 24' fill='none' stroke='%2342493F' stroke-width='2'%3E%3Cpath d='M6 9l6 6 6-6'/%3E%3C/svg%3E"); background-repeat: no-repeat; background-position: right 12px center; padding-right: 36px; }
+  .m3-field input:focus, .m3-field textarea:focus, .m3-field select:focus { outline: none; border-color: var(--md-primary); border-width: 2px; }
+  .m3-field input:focus, .m3-field textarea:focus { padding: 19px 15px 7px; }
+  .m3-field.error input { border-color: var(--md-secondary); }
+  .m3-field label {
+    position: absolute; left: 16px; top: 19px; font: var(--type-body-large); font-size: 15px; color: var(--md-on-surface-variant);
+    background: var(--md-surface-container); padding: 0 4px; margin-left: -4px; pointer-events: none; transform-origin: left top;
+    transition: top var(--md-duration-short) var(--md-easing-standard), font-size var(--md-duration-short) var(--md-easing-standard), color var(--md-duration-short) var(--md-easing-standard);
+  }
+  .m3-field input:focus + label, .m3-field input:not(:placeholder-shown) + label,
+  .m3-field textarea:focus + label, .m3-field textarea:not(:placeholder-shown) + label,
+  .m3-field.m3-field-select label { top: -8px; font-size: 11px; }
+  .m3-field input:focus + label, .m3-field textarea:focus + label { color: var(--md-on-primary-container); }
+  .m3-field.error label { color: var(--md-secondary); }
+  .m3-supporting-text { font: var(--type-body-small); color: var(--md-on-surface-variant); margin: 4px 4px 8px; }
+  .m3-supporting-text.error { color: var(--md-on-secondary-container); }
+
+  /* --- Dark-surface fields for the sign-in gate --- */
+  .gate-field { position: relative; margin-bottom: 16px; }
+  .gate-field input { width: 100%; border: 1px solid #445240; border-radius: 4px; padding: 20px 16px 8px; font: var(--type-body-large); background: #2c3d27; color: var(--md-surface); transition: border-color var(--md-duration-short) var(--md-easing-standard); }
+  .gate-field input:focus { outline: none; border-color: var(--md-primary); border-width: 2px; padding: 19px 15px 7px; }
+  .gate-field label { position: absolute; left: 16px; top: 19px; font: var(--type-body-large); font-size: 15px; color: #a9b3a3; background: #2c3d27; padding: 0 4px; margin-left: -4px; pointer-events: none; transition: top var(--md-duration-short) var(--md-easing-standard), font-size var(--md-duration-short) var(--md-easing-standard), color var(--md-duration-short) var(--md-easing-standard); }
+  .gate-field input:focus + label, .gate-field input:not(:placeholder-shown) + label { top: -8px; font-size: 11px; }
+  .gate-field input:focus + label { color: var(--md-inverse-primary); }
+
+  .loading { text-align: center; padding: 40px; color: var(--md-on-surface-variant); font: var(--type-body-medium); }
+
+  #gate { position: fixed; inset: 0; background: var(--md-tertiary); display: flex; align-items: center; justify-content: center; z-index: 50; padding: 20px; }
   #gate.hidden { display: none; }
   .gate-box { max-width: 300px; width: 100%; text-align: center; }
-  .gate-box h1 { font-family: 'Bebas Neue', sans-serif; color: #FAF5EA; font-size: 26px; letter-spacing: 0.03em; margin-bottom: 20px; }
-  .gate-loading { color: #FAF5EA; opacity: 0.6; font-size: 13px; }
-  .gate-box input { width: 100%; padding: 12px; border-radius: 8px; border: 1px solid #445240; background: #2c3d27; color: #FAF5EA; font-family: 'Archivo'; font-size: 15px; text-align: center; margin-bottom: 10px; }
-  .gate-box input::placeholder { color: #8a9285; }
-  .gate-box button { width: 100%; padding: 12px; border-radius: 8px; border: none; background: #C08A2E; color: #fff; font-family: 'Archivo'; font-weight: 600; font-size: 14px; cursor: pointer; }
-  .gate-box button.gate-alt { background: transparent; border: 1px solid #C08A2E; color: #C08A2E; margin-top: 8px; }
-  .gate-error { color: #C97A5D; font-size: 12px; margin-top: 10px; min-height: 14px; }
+  .gate-box h1 { font: var(--type-headline-medium); color: var(--md-surface); letter-spacing: 0.03em; margin-bottom: 24px; }
+  .gate-loading { color: var(--md-surface); opacity: 0.6; font: var(--type-body-medium); }
+  .gate-form .btn { width: 100%; margin-bottom: 8px; }
+  .gate-form .btn-outlined-dark { background: transparent; border: 1px solid var(--md-inverse-primary); color: var(--md-inverse-primary); }
+  .gate-form .btn-outlined-dark:hover { background: rgba(249,188,91,0.08); }
+  .gate-error { color: var(--md-error-on-dark); font: var(--type-body-small); margin-top: 8px; min-height: 14px; }
 
-  .fab { padding-bottom: calc(14px + env(safe-area-inset-bottom)); bottom: calc(24px + env(safe-area-inset-bottom)); }
+  /* --- M3 snackbar with Undo action --- */
+  .snackbar { position: fixed; left: 16px; right: 16px; bottom: 16px; max-width: 420px; margin: 0 auto; background: var(--md-inverse-surface); color: var(--md-inverse-on-surface); border-radius: 8px; padding: 8px 8px 8px 16px; display: flex; align-items: center; justify-content: space-between; gap: 8px; box-shadow: var(--md-elevation-3); z-index: 40; transform: translateY(150%); opacity: 0; transition: transform var(--md-duration-medium) var(--md-easing-standard), opacity var(--md-duration-medium) var(--md-easing-standard); }
+  .snackbar.show { transform: translateY(0); opacity: 1; }
+  .snackbar span.msg { font: var(--type-body-medium); }
+  .snackbar button { background: none; border: none; color: var(--md-inverse-primary); font: var(--type-label-large); min-height: 40px; padding: 0 12px; border-radius: 999px; cursor: pointer; }
+  .snackbar button:hover { background: rgba(249,188,91,0.12); }
+
+  /* --- Modal: animated per M3 standard easing --- */
+  .modal-bg { display: flex; position: fixed; inset: 0; background: rgba(34,48,31,0.5); align-items: flex-end; justify-content: center; z-index: 20; opacity: 0; pointer-events: none; transition: opacity var(--md-duration-medium) var(--md-easing-standard); }
+  .modal-bg.open { opacity: 1; pointer-events: auto; }
+  .modal { background: var(--md-surface); width: 100%; max-width: 480px; border-radius: 20px 20px 0 0; padding: 24px; transform: translateY(24px); transition: transform var(--md-duration-medium) var(--md-easing-standard); }
+  .modal-bg.open .modal { transform: translateY(0); }
+  .modal h2 { font: var(--type-title-large); margin-bottom: 16px; }
 
   @media (min-width: 640px) {
     #app { max-width: 720px; }
     .list { grid-template-columns: 1fr 1fr; display: grid; }
     .stats { max-width: 720px; }
     .modal-bg { align-items: center; }
-    .modal { max-width: 420px; border-radius: 16px; }
+    .modal { max-width: 420px; border-radius: 20px; transform: translateY(12px) scale(0.98); }
+    .modal-bg.open .modal { transform: translateY(0) scale(1); }
   }
   @media (min-width: 1024px) {
     #app { max-width: 960px; }
@@ -106,10 +222,16 @@
     <h1>Little Valie Atelier</h1>
     <div class="gate-loading" id="gateLoading">Loading…</div>
     <div class="gate-form" id="gateForm" style="display:none">
-      <input type="email" id="authEmail" placeholder="Email" autocomplete="email">
-      <input type="password" id="authPassword" placeholder="Password" autocomplete="current-password">
-      <button onclick="handleSignIn()">Sign in</button>
-      <button class="gate-alt" onclick="handleSignUp()">Create account</button>
+      <div class="gate-field">
+        <input type="email" id="authEmail" placeholder=" " autocomplete="email">
+        <label for="authEmail">Email</label>
+      </div>
+      <div class="gate-field">
+        <input type="password" id="authPassword" placeholder=" " autocomplete="current-password">
+        <label for="authPassword">Password</label>
+      </div>
+      <button class="btn btn-filled" onclick="handleSignIn()">Sign in</button>
+      <button class="btn btn-outlined-dark" onclick="handleSignUp()">Create account</button>
       <div class="gate-error" id="gateError"></div>
     </div>
   </div>
@@ -119,7 +241,7 @@
   <header>
     <div class="header-top">
       <h1>Reel tracker</h1>
-      <button class="signout" onclick="handleSignOut()">Sign out</button>
+      <button class="signout" onclick="handleSignOut()"><span class="material-symbols-outlined">logout</span>Sign out</button>
     </div>
     <p>Little Valie Atelier — Tried &amp; Tested</p>
   </header>
@@ -129,33 +251,44 @@
   <div class="list" id="list"><div class="loading">Loading your reels…</div></div>
 </div>
 
-
-<button class="fab" onclick="openModal()">+ New reel</button>
+<button class="fab" onclick="openModal()"><span class="material-symbols-outlined">add</span>New reel</button>
 
 <div class="modal-bg" id="modalBg">
   <div class="modal">
     <h2 id="modalTitle">New reel</h2>
-    <div class="field">
-      <label>Product / title</label>
-      <input id="fTitle" placeholder="Insta360 Hello Kitty review">
+    <div class="m3-field" id="fTitleField">
+      <input id="fTitle" placeholder=" ">
+      <label for="fTitle">Product / title</label>
     </div>
-    <div class="field">
-      <label>Stage</label>
+    <p class="m3-supporting-text" id="fTitleSupport">e.g. "Insta360 Hello Kitty review"</p>
+
+    <div class="m3-field m3-field-select">
       <select id="fStage"></select>
+      <label for="fStage">Stage</label>
     </div>
-    <div class="field">
-      <label>Hook line</label>
-      <textarea id="fHook" placeholder="I run a slow-design brand... and then this showed up."></textarea>
+
+    <div class="m3-field">
+      <textarea id="fHook" placeholder=" "></textarea>
+      <label for="fHook">Hook line</label>
     </div>
-    <div class="field">
-      <label>Notes</label>
-      <textarea id="fNotes" placeholder="Props needed, filming location, edit ideas..."></textarea>
+    <p class="m3-supporting-text">e.g. "I run a slow-design brand... and then this showed up."</p>
+
+    <div class="m3-field">
+      <textarea id="fNotes" placeholder=" "></textarea>
+      <label for="fNotes">Notes</label>
     </div>
+    <p class="m3-supporting-text">e.g. props needed, filming location, edit ideas</p>
+
     <div class="modal-actions">
-      <button class="btn-cancel" onclick="closeModal()">Cancel</button>
-      <button class="btn-save" onclick="saveReel()">Save reel</button>
+      <button class="btn btn-text" onclick="closeModal()">Cancel</button>
+      <button class="btn btn-filled" onclick="saveReel()">Save reel</button>
     </div>
   </div>
+</div>
+
+<div class="snackbar" id="snackbar">
+  <span class="msg" id="snackbarMsg"></span>
+  <button id="snackbarAction">Undo</button>
 </div>
 
 <script src="https://www.gstatic.com/firebasejs/10.14.1/firebase-app-compat.js"></script>
@@ -188,6 +321,8 @@ let currentUser = null;
 let isOffline = false;
 let unsubReels = null;
 let unsubCounter = null;
+let pendingDeletes = new Map();
+let snackbarTimeout = null;
 
 function populateStageSelect() {
   document.getElementById('fStage').innerHTML = STAGES.map((s, i) => `<option value="${i}">${s}</option>`).join('');
@@ -310,7 +445,7 @@ function openModal() {
   document.getElementById('fStage').value = 0;
   document.getElementById('fHook').value = '';
   document.getElementById('fNotes').value = '';
-  document.getElementById('fTitle').style.borderColor = '';
+  clearFieldError();
   document.getElementById('modalBg').classList.add('open');
 }
 
@@ -323,7 +458,7 @@ function openEditModal(id) {
   document.getElementById('fStage').value = r.stage;
   document.getElementById('fHook').value = r.hook || '';
   document.getElementById('fNotes').value = r.notes || '';
-  document.getElementById('fTitle').style.borderColor = '';
+  clearFieldError();
   document.getElementById('modalBg').classList.add('open');
 }
 
@@ -331,10 +466,22 @@ function closeModal() {
   document.getElementById('modalBg').classList.remove('open');
 }
 
+function clearFieldError() {
+  document.getElementById('fTitleField').classList.remove('error');
+  document.getElementById('fTitleSupport').textContent = 'e.g. "Insta360 Hello Kitty review"';
+  document.getElementById('fTitleSupport').classList.remove('error');
+}
+
+function showFieldError() {
+  document.getElementById('fTitleField').classList.add('error');
+  document.getElementById('fTitleSupport').textContent = 'Title is required';
+  document.getElementById('fTitleSupport').classList.add('error');
+}
+
 function saveReel() {
   const title = document.getElementById('fTitle').value.trim();
   if (!title) {
-    document.getElementById('fTitle').style.borderColor = '#C97A5D';
+    showFieldError();
     return;
   }
   const hook = document.getElementById('fHook').value.trim();
@@ -367,9 +514,42 @@ function setStage(id, stage) {
 }
 
 function deleteReel(id) {
+  if (pendingDeletes.has(id)) return;
+  const timeoutId = setTimeout(() => commitDelete(id), 5000);
+  pendingDeletes.set(id, timeoutId);
+  render();
+  showSnackbar('Reel deleted', () => undoDelete(id));
+}
+
+function undoDelete(id) {
+  const timeoutId = pendingDeletes.get(id);
+  if (timeoutId === undefined) return;
+  clearTimeout(timeoutId);
+  pendingDeletes.delete(id);
+  hideSnackbar();
+  render();
+}
+
+function commitDelete(id) {
+  pendingDeletes.delete(id);
   db.collection('users').doc(currentUser.uid).collection('reels').doc(id).delete().catch(err => {
     console.error('Delete failed', err);
   });
+}
+
+function showSnackbar(message, onAction) {
+  const bar = document.getElementById('snackbar');
+  document.getElementById('snackbarMsg').textContent = message;
+  const actionBtn = document.getElementById('snackbarAction');
+  actionBtn.onclick = () => { onAction(); };
+  clearTimeout(snackbarTimeout);
+  bar.classList.add('show');
+  snackbarTimeout = setTimeout(hideSnackbar, 5000);
+}
+
+function hideSnackbar() {
+  document.getElementById('snackbar').classList.remove('show');
+  clearTimeout(snackbarTimeout);
 }
 
 function setFilter(stage) {
@@ -390,12 +570,17 @@ function render() {
     <div class="stat"><div class="n">${posted}</div><div class="l">Posted</div></div>
   `;
 
-  filterRow.innerHTML = `
-    <button class="filter-btn ${stageFilter === 'all' ? 'active' : ''}" onclick="setFilter('all')">All</button>
-    ${STAGES.map((s, i) => `<button class="filter-btn ${stageFilter === i ? 'active' : ''}" onclick="setFilter(${i})">${s}</button>`).join('')}
+  const chip = (selected, label, onclick) => `
+    <button class="chip ${selected ? 'selected' : ''}" onclick="${onclick}">
+      ${selected ? '<span class="material-symbols-outlined chip-check">check</span>' : ''}${label}
+    </button>
   `;
 
-  const filtered = stageFilter === 'all' ? reels : reels.filter(r => r.stage === stageFilter);
+  filterRow.innerHTML = chip(stageFilter === 'all', 'All', "setFilter('all')") +
+    STAGES.map((s, i) => chip(stageFilter === i, s, `setFilter(${i})`)).join('');
+
+  const filtered = (stageFilter === 'all' ? reels : reels.filter(r => r.stage === stageFilter))
+    .filter(r => !pendingDeletes.has(r.id));
 
   if (reels.length === 0) {
     list.innerHTML = '<div class="empty">No reels yet. Tap "New reel" to plan your first one.</div>';
@@ -416,12 +601,12 @@ function render() {
           ${r.notes ? `<div class="card-notes">${escapeHtml(r.notes)}</div>` : ''}
         </div>
         <div class="card-actions">
-          <button class="edit" onclick="openEditModal('${r.id}')" aria-label="Edit">&#9998;</button>
-          <button class="del" onclick="deleteReel('${r.id}')" aria-label="Delete">&times;</button>
+          <button class="icon-btn edit" onclick="openEditModal('${r.id}')" aria-label="Edit"><span class="material-symbols-outlined">edit</span></button>
+          <button class="icon-btn del" onclick="deleteReel('${r.id}')" aria-label="Delete"><span class="material-symbols-outlined">delete</span></button>
         </div>
       </div>
       <div class="stage-row">
-        ${STAGES.map((s, i) => `<button class="stage-btn s${i} ${r.stage === i ? 'active' : ''}" onclick="setStage('${r.id}', ${i})">${s}</button>`).join('')}
+        ${STAGES.map((s, i) => chip(r.stage === i, s, `setStage('${r.id}', ${i})`)).join('')}
       </div>
     </div>
   `).join('');
