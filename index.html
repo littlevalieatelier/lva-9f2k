@@ -14,8 +14,13 @@
   #app { max-width: 480px; margin: 0 auto; padding-bottom: 100px; }
 
   header { background: #22301F; padding: 20px 20px 16px; padding-top: calc(20px + env(safe-area-inset-top)); position: sticky; top: 0; z-index: 5; }
+  .header-top { display: flex; justify-content: space-between; align-items: center; gap: 8px; }
   header h1 { font-family: 'Bebas Neue', sans-serif; letter-spacing: 0.03em; font-size: clamp(24px, 5vw, 30px); color: #FAF5EA; }
   header p { font-size: 12px; color: #C08A2E; margin-top: 2px; }
+  .signout { background: none; border: 1px solid #445240; color: #C08A2E; font-size: 11px; padding: 4px 10px; border-radius: 999px; cursor: pointer; font-family: 'Archivo'; }
+  .signout:hover { opacity: 0.8; }
+
+  .offline-banner { background: #F1E9D6; color: #22301F; font-size: 12px; text-align: center; padding: 8px 16px; }
 
   .stats { display: flex; gap: 8px; padding: 14px 16px 4px; }
   .stat { flex: 1; background: #F1E9D6; border-radius: 10px; padding: 10px 8px; text-align: center; }
@@ -71,9 +76,11 @@
   #gate.hidden { display: none; }
   .gate-box { max-width: 300px; width: 100%; text-align: center; }
   .gate-box h1 { font-family: 'Bebas Neue', sans-serif; color: #FAF5EA; font-size: 26px; letter-spacing: 0.03em; margin-bottom: 20px; }
+  .gate-loading { color: #FAF5EA; opacity: 0.6; font-size: 13px; }
   .gate-box input { width: 100%; padding: 12px; border-radius: 8px; border: 1px solid #445240; background: #2c3d27; color: #FAF5EA; font-family: 'Archivo'; font-size: 15px; text-align: center; margin-bottom: 10px; }
   .gate-box input::placeholder { color: #8a9285; }
   .gate-box button { width: 100%; padding: 12px; border-radius: 8px; border: none; background: #C08A2E; color: #fff; font-family: 'Archivo'; font-weight: 600; font-size: 14px; cursor: pointer; }
+  .gate-box button.gate-alt { background: transparent; border: 1px solid #C08A2E; color: #C08A2E; margin-top: 8px; }
   .gate-error { color: #C97A5D; font-size: 12px; margin-top: 10px; min-height: 14px; }
 
   .fab { padding-bottom: calc(14px + env(safe-area-inset-bottom)); bottom: calc(24px + env(safe-area-inset-bottom)); }
@@ -97,17 +104,26 @@
 <div id="gate">
   <div class="gate-box">
     <h1>Little Valie Atelier</h1>
-    <input type="password" id="gatePw" placeholder="Password" autocomplete="off">
-    <button onclick="tryUnlock()">Enter</button>
-    <div class="gate-error" id="gateError"></div>
+    <div class="gate-loading" id="gateLoading">Loading…</div>
+    <div class="gate-form" id="gateForm" style="display:none">
+      <input type="email" id="authEmail" placeholder="Email" autocomplete="email">
+      <input type="password" id="authPassword" placeholder="Password" autocomplete="current-password">
+      <button onclick="handleSignIn()">Sign in</button>
+      <button class="gate-alt" onclick="handleSignUp()">Create account</button>
+      <div class="gate-error" id="gateError"></div>
+    </div>
   </div>
 </div>
 
 <div id="app" style="display:none">
   <header>
-    <h1>Reel tracker</h1>
+    <div class="header-top">
+      <h1>Reel tracker</h1>
+      <button class="signout" onclick="handleSignOut()">Sign out</button>
+    </div>
     <p>Little Valie Atelier — Tried &amp; Tested</p>
   </header>
+  <div class="offline-banner" id="offlineBanner" hidden>You're offline — showing cached reels. Changes will sync once you're back online.</div>
   <div class="stats" id="stats"></div>
   <div class="filter-row" id="filterRow"></div>
   <div class="list" id="list"><div class="loading">Loading your reels…</div></div>
@@ -142,35 +158,107 @@
   </div>
 </div>
 
-<script>
-const PASSWORD = 'lva4real';
+<script src="https://www.gstatic.com/firebasejs/10.14.1/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.14.1/firebase-auth-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.14.1/firebase-firestore-compat.js"></script>
 
-function checkGate() {
-  if (sessionStorage.getItem('lva_unlocked') === 'yes') {
-    showApp();
-  } else {
-    document.getElementById('gatePw').addEventListener('keydown', e => {
-      if (e.key === 'Enter') tryUnlock();
-    });
-  }
+<script>
+const firebaseConfig = {
+  apiKey: "AIzaSyAqTuo__DExYIyPtF9s--I9zMXHHiXX_XY",
+  authDomain: "little-valie-atelier.firebaseapp.com",
+  projectId: "little-valie-atelier",
+  storageBucket: "little-valie-atelier.firebasestorage.app",
+  messagingSenderId: "906948076865",
+  appId: "1:906948076865:web:b7242a4564514957a26dc0",
+  measurementId: "G-03JPK496HZ"
+};
+firebase.initializeApp(firebaseConfig);
+const auth = firebase.auth();
+const db = firebase.firestore();
+db.enablePersistence({ synchronizeTabs: true }).catch(err => {
+  console.warn('Offline persistence unavailable:', err.code);
+});
+
+const STAGES = ['Idea','Scripted','Filming','Editing','Posted'];
+let reels = [];
+let nextNum = 1;
+let stageFilter = 'all';
+let editingId = null;
+let currentUser = null;
+let isOffline = false;
+let unsubReels = null;
+let unsubCounter = null;
+
+function populateStageSelect() {
+  document.getElementById('fStage').innerHTML = STAGES.map((s, i) => `<option value="${i}">${s}</option>`).join('');
+}
+populateStageSelect();
+
+document.getElementById('authEmail').addEventListener('keydown', e => { if (e.key === 'Enter') handleSignIn(); });
+document.getElementById('authPassword').addEventListener('keydown', e => { if (e.key === 'Enter') handleSignIn(); });
+
+function initAuth() {
+  auth.onAuthStateChanged(user => {
+    document.getElementById('gateLoading').style.display = 'none';
+    document.getElementById('gateForm').style.display = 'block';
+    if (user) {
+      currentUser = user;
+      showApp();
+    } else {
+      currentUser = null;
+      teardownListeners();
+      showGate();
+    }
+  });
 }
 
-function tryUnlock() {
-  const val = document.getElementById('gatePw').value;
-  if (val === PASSWORD) {
-    sessionStorage.setItem('lva_unlocked', 'yes');
-    showApp();
-  } else {
-    document.getElementById('gateError').textContent = 'Wrong password, try again.';
-    document.getElementById('gatePw').value = '';
-  }
+function teardownListeners() {
+  if (unsubReels) { unsubReels(); unsubReels = null; }
+  if (unsubCounter) { unsubCounter(); unsubCounter = null; }
+}
+
+function showGate() {
+  document.getElementById('gate').classList.remove('hidden');
+  document.getElementById('app').style.display = 'none';
+  document.getElementById('authPassword').value = '';
 }
 
 function showApp() {
   document.getElementById('gate').classList.add('hidden');
   document.getElementById('app').style.display = 'block';
-  loadReels();
+  subscribeReels();
+  subscribeCounter();
   prefillFromQuery();
+}
+
+function clearAuthError() {
+  document.getElementById('gateError').textContent = '';
+}
+
+function authErrorMessage(err) {
+  return err && err.message ? err.message : 'Something went wrong, try again.';
+}
+
+function handleSignIn() {
+  const email = document.getElementById('authEmail').value.trim();
+  const password = document.getElementById('authPassword').value;
+  clearAuthError();
+  auth.signInWithEmailAndPassword(email, password).catch(err => {
+    document.getElementById('gateError').textContent = authErrorMessage(err);
+  });
+}
+
+function handleSignUp() {
+  const email = document.getElementById('authEmail').value.trim();
+  const password = document.getElementById('authPassword').value;
+  clearAuthError();
+  auth.createUserWithEmailAndPassword(email, password).catch(err => {
+    document.getElementById('gateError').textContent = authErrorMessage(err);
+  });
+}
+
+function handleSignOut() {
+  auth.signOut();
 }
 
 function prefillFromQuery() {
@@ -189,39 +277,30 @@ function prefillFromQuery() {
   }
 }
 
-const STAGES = ['Idea','Scripted','Filming','Editing','Posted'];
-let reels = [];
-let nextNum = 1;
-let stageFilter = 'all';
-let editingId = null;
-
-function populateStageSelect() {
-  document.getElementById('fStage').innerHTML = STAGES.map((s, i) => `<option value="${i}">${s}</option>`).join('');
-}
-populateStageSelect();
-
-function loadReels() {
-  try {
-    const raw = localStorage.getItem('lva_reels');
-    reels = raw ? JSON.parse(raw) : [];
-  } catch (e) {
-    reels = [];
-  }
-  try {
-    const raw = localStorage.getItem('lva_reel_counter');
-    nextNum = raw ? JSON.parse(raw) : 1;
-  } catch (e) {
-    nextNum = 1;
-  }
-  render();
+function setOffline(fromCache) {
+  if (fromCache === isOffline) return;
+  isOffline = fromCache;
+  document.getElementById('offlineBanner').hidden = !isOffline;
 }
 
-function persist() {
-  try {
-    localStorage.setItem('lva_reels', JSON.stringify(reels));
-  } catch (e) {
-    console.error('Save failed', e);
-  }
+function subscribeReels() {
+  const ref = db.collection('users').doc(currentUser.uid).collection('reels').orderBy('createdAt', 'desc');
+  unsubReels = ref.onSnapshot(snapshot => {
+    reels = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+    setOffline(snapshot.metadata.fromCache);
+    render();
+  }, err => {
+    console.error('Reels listener error', err);
+  });
+}
+
+function subscribeCounter() {
+  const ref = db.collection('users').doc(currentUser.uid);
+  unsubCounter = ref.onSnapshot(doc => {
+    nextNum = (doc.exists && doc.data().nextReelNum) ? doc.data().nextReelNum : 1;
+  }, err => {
+    console.error('Counter listener error', err);
+  });
 }
 
 function openModal() {
@@ -261,42 +340,36 @@ function saveReel() {
   const hook = document.getElementById('fHook').value.trim();
   const notes = document.getElementById('fNotes').value.trim();
   const stage = parseInt(document.getElementById('fStage').value, 10);
+  const userRef = db.collection('users').doc(currentUser.uid);
 
   if (editingId) {
-    const r = reels.find(x => x.id === editingId);
-    if (r) {
-      r.title = title;
-      r.stage = stage;
-      r.hook = hook;
-      r.notes = notes;
-    }
-    persist();
+    userRef.collection('reels').doc(editingId).update({ title, stage, hook, notes }).catch(err => {
+      console.error('Save failed', err);
+    });
   } else {
     const code = 'LVA-' + String(nextNum).padStart(3, '0');
-    reels.unshift({ id: Date.now().toString(), code, title, hook, notes, stage, createdAt: new Date().toISOString() });
+    const reelRef = userRef.collection('reels').doc();
+    const batch = db.batch();
+    batch.set(reelRef, { code, title, hook, notes, stage, createdAt: firebase.firestore.FieldValue.serverTimestamp() });
+    batch.set(userRef, { nextReelNum: nextNum + 1 }, { merge: true });
     nextNum += 1;
-    persist();
-    try {
-      localStorage.setItem('lva_reel_counter', JSON.stringify(nextNum));
-    } catch (e) {
-      console.error('Counter save failed', e);
-    }
+    batch.commit().catch(err => {
+      console.error('Save failed', err);
+    });
   }
   closeModal();
-  render();
 }
 
 function setStage(id, stage) {
-  const r = reels.find(x => x.id === id);
-  if (r) r.stage = stage;
-  persist();
-  render();
+  db.collection('users').doc(currentUser.uid).collection('reels').doc(id).update({ stage }).catch(err => {
+    console.error('Stage update failed', err);
+  });
 }
 
 function deleteReel(id) {
-  reels = reels.filter(x => x.id !== id);
-  persist();
-  render();
+  db.collection('users').doc(currentUser.uid).collection('reels').doc(id).delete().catch(err => {
+    console.error('Delete failed', err);
+  });
 }
 
 function setFilter(stage) {
@@ -360,7 +433,7 @@ function escapeHtml(str) {
   return div.innerHTML;
 }
 
-checkGate();
+initAuth();
 </script>
 
 </body>
