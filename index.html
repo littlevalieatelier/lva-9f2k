@@ -36,9 +36,10 @@
   .card-hook { font-size: 13px; color: #22301F; opacity: 0.7; margin-top: 3px; font-style: italic; }
   .card-notes { font-size: 12px; color: #22301F; opacity: 0.6; margin-top: 6px; white-space: pre-wrap; }
   .card-actions { display: flex; gap: 2px; }
-  .del, .edit { background: none; border: none; color: #22301F; opacity: 0.35; font-size: 14px; cursor: pointer; padding: 2px 6px; }
-  .del { font-size: 16px; }
-  .del:hover, .edit:hover { opacity: 0.8; }
+  .del, .edit { background: none; border: none; font-size: 14px; cursor: pointer; padding: 2px 6px; }
+  .del { font-size: 16px; color: #22301F; }
+  .edit { color: #C08A2E; }
+  .del:hover, .edit:hover { opacity: 0.7; }
 
   .stage-row { display: flex; gap: 4px; margin-top: 12px; }
   .stage-btn { flex: 1; font-size: 10px; padding: 7px 2px; border-radius: 6px; border: 1px solid #e5ddc8; background: #FAF5EA; color: #22301F; opacity: 0.5; cursor: pointer; text-align: center; }
@@ -57,7 +58,7 @@
   .modal h2 { font-family: 'Bebas Neue'; font-size: 20px; margin-bottom: 14px; letter-spacing: 0.02em; }
   .field { margin-bottom: 12px; }
   .field label { display: block; font-size: 11px; text-transform: uppercase; letter-spacing: 0.04em; opacity: 0.6; margin-bottom: 4px; }
-  .field input, .field textarea { width: 100%; border: 1px solid #ddd2ae; border-radius: 8px; padding: 10px; font-family: 'Archivo'; font-size: 14px; background: #fff; }
+  .field input, .field textarea, .field select { width: 100%; border: 1px solid #ddd2ae; border-radius: 8px; padding: 10px; font-family: 'Archivo'; font-size: 14px; background: #fff; color: #22301F; }
   .field textarea { resize: none; height: 50px; }
   .modal-actions { display: flex; gap: 8px; margin-top: 16px; }
   .modal-actions button { flex: 1; padding: 12px; border-radius: 8px; border: none; font-family: 'Archivo'; font-weight: 600; font-size: 14px; cursor: pointer; }
@@ -123,6 +124,10 @@
       <input id="fTitle" placeholder="Insta360 Hello Kitty review">
     </div>
     <div class="field">
+      <label>Stage</label>
+      <select id="fStage"></select>
+    </div>
+    <div class="field">
       <label>Hook line</label>
       <textarea id="fHook" placeholder="I run a slow-design brand... and then this showed up."></textarea>
     </div>
@@ -165,6 +170,23 @@ function showApp() {
   document.getElementById('gate').classList.add('hidden');
   document.getElementById('app').style.display = 'block';
   loadReels();
+  prefillFromQuery();
+}
+
+function prefillFromQuery() {
+  const params = new URLSearchParams(window.location.search);
+  if (!params.has('title') && !params.has('hook') && !params.has('notes') && !params.has('stage')) return;
+
+  openModal();
+  if (params.has('title')) document.getElementById('fTitle').value = params.get('title');
+  if (params.has('hook')) document.getElementById('fHook').value = params.get('hook');
+  if (params.has('notes')) document.getElementById('fNotes').value = params.get('notes');
+  if (params.has('stage')) {
+    const stageIdx = parseInt(params.get('stage'), 10);
+    if (!isNaN(stageIdx) && stageIdx >= 0 && stageIdx < STAGES.length) {
+      document.getElementById('fStage').value = stageIdx;
+    }
+  }
 }
 
 const STAGES = ['Idea','Scripted','Filming','Editing','Posted'];
@@ -172,6 +194,11 @@ let reels = [];
 let nextNum = 1;
 let stageFilter = 'all';
 let editingId = null;
+
+function populateStageSelect() {
+  document.getElementById('fStage').innerHTML = STAGES.map((s, i) => `<option value="${i}">${s}</option>`).join('');
+}
+populateStageSelect();
 
 function loadReels() {
   try {
@@ -201,6 +228,7 @@ function openModal() {
   editingId = null;
   document.getElementById('modalTitle').textContent = 'New reel';
   document.getElementById('fTitle').value = '';
+  document.getElementById('fStage').value = 0;
   document.getElementById('fHook').value = '';
   document.getElementById('fNotes').value = '';
   document.getElementById('fTitle').style.borderColor = '';
@@ -213,6 +241,7 @@ function openEditModal(id) {
   editingId = id;
   document.getElementById('modalTitle').textContent = 'Edit reel';
   document.getElementById('fTitle').value = r.title;
+  document.getElementById('fStage').value = r.stage;
   document.getElementById('fHook').value = r.hook || '';
   document.getElementById('fNotes').value = r.notes || '';
   document.getElementById('fTitle').style.borderColor = '';
@@ -231,18 +260,20 @@ function saveReel() {
   }
   const hook = document.getElementById('fHook').value.trim();
   const notes = document.getElementById('fNotes').value.trim();
+  const stage = parseInt(document.getElementById('fStage').value, 10);
 
   if (editingId) {
     const r = reels.find(x => x.id === editingId);
     if (r) {
       r.title = title;
+      r.stage = stage;
       r.hook = hook;
       r.notes = notes;
     }
     persist();
   } else {
     const code = 'LVA-' + String(nextNum).padStart(3, '0');
-    reels.unshift({ id: Date.now().toString(), code, title, hook, notes, stage: 0, createdAt: new Date().toISOString() });
+    reels.unshift({ id: Date.now().toString(), code, title, hook, notes, stage, createdAt: new Date().toISOString() });
     nextNum += 1;
     persist();
     try {
