@@ -1,0 +1,221 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="theme-color" content="#22301F">
+<title>Reel tracker</title>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=Bebas+Neue&family=Archivo:wght@400;500;600&display=swap');
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body { font-family: 'Archivo', sans-serif; background: #FAF5EA; color: #22301F; min-height: 100vh; padding-left: env(safe-area-inset-left); padding-right: env(safe-area-inset-right); }
+  #app { max-width: 480px; margin: 0 auto; padding-bottom: 100px; }
+
+  header { background: #22301F; padding: 20px 20px 16px; padding-top: calc(20px + env(safe-area-inset-top)); position: sticky; top: 0; z-index: 5; }
+  header h1 { font-family: 'Bebas Neue', sans-serif; letter-spacing: 0.03em; font-size: clamp(24px, 5vw, 30px); color: #FAF5EA; }
+  header p { font-size: 12px; color: #C08A2E; margin-top: 2px; }
+
+  .stats { display: flex; gap: 8px; padding: 14px 16px 4px; }
+  .stat { flex: 1; background: #F1E9D6; border-radius: 10px; padding: 10px 8px; text-align: center; }
+  .stat .n { font-size: 20px; font-weight: 600; }
+  .stat .l { font-size: 10px; color: #22301F; opacity: 0.65; text-transform: uppercase; letter-spacing: 0.04em; }
+
+  .list { padding: 8px 16px; display: flex; flex-direction: column; gap: 10px; }
+  .empty { text-align: center; padding: 60px 20px; color: #22301F; opacity: 0.55; font-size: 14px; }
+
+  .card { background: #fff; border: 1px solid #eee2c9; border-radius: 12px; padding: 14px; }
+  .card-top { display: flex; justify-content: space-between; align-items: flex-start; gap: 8px; }
+  .code { display: inline-block; font-size: 10px; font-weight: 600; color: #C08A2E; background: #FAF5EA; border: 1px solid #eee2c9; border-radius: 5px; padding: 2px 6px; letter-spacing: 0.03em; margin-bottom: 4px; }
+  .card-title { font-weight: 600; font-size: 15px; }
+  .card-hook { font-size: 13px; color: #22301F; opacity: 0.7; margin-top: 3px; font-style: italic; }
+  .del { background: none; border: none; color: #22301F; opacity: 0.35; font-size: 16px; cursor: pointer; padding: 2px 6px; }
+  .del:hover { opacity: 0.8; }
+
+  .stage-row { display: flex; gap: 4px; margin-top: 12px; }
+  .stage-btn { flex: 1; font-size: 10px; padding: 7px 2px; border-radius: 6px; border: 1px solid #e5ddc8; background: #FAF5EA; color: #22301F; opacity: 0.5; cursor: pointer; text-align: center; }
+  .stage-btn.active { opacity: 1; font-weight: 600; border-color: transparent; }
+  .stage-btn.s0.active { background: #F1E9D6; }
+  .stage-btn.s1.active { background: #e9d5b0; }
+  .stage-btn.s2.active { background: #C97A5D; color: #fff; }
+  .stage-btn.s3.active { background: #C08A2E; color: #fff; }
+  .stage-btn.s4.active { background: #22301F; color: #FAF5EA; }
+
+  .fab { position: fixed; bottom: 24px; left: 50%; transform: translateX(-50%); background: #C08A2E; color: #fff; border: none; border-radius: 999px; padding: 14px 28px; font-family: 'Archivo'; font-weight: 600; font-size: 14px; box-shadow: 0 4px 14px rgba(34,48,31,0.25); cursor: pointer; }
+
+  .modal-bg { display: none; position: fixed; inset: 0; background: rgba(34,48,31,0.5); align-items: flex-end; justify-content: center; z-index: 20; }
+  .modal-bg.open { display: flex; }
+  .modal { background: #FAF5EA; width: 100%; max-width: 480px; border-radius: 16px 16px 0 0; padding: 20px; }
+  .modal h2 { font-family: 'Bebas Neue'; font-size: 20px; margin-bottom: 14px; letter-spacing: 0.02em; }
+  .field { margin-bottom: 12px; }
+  .field label { display: block; font-size: 11px; text-transform: uppercase; letter-spacing: 0.04em; opacity: 0.6; margin-bottom: 4px; }
+  .field input, .field textarea { width: 100%; border: 1px solid #ddd2ae; border-radius: 8px; padding: 10px; font-family: 'Archivo'; font-size: 14px; background: #fff; }
+  .field textarea { resize: none; height: 50px; }
+  .modal-actions { display: flex; gap: 8px; margin-top: 16px; }
+  .modal-actions button { flex: 1; padding: 12px; border-radius: 8px; border: none; font-family: 'Archivo'; font-weight: 600; font-size: 14px; cursor: pointer; }
+  .btn-cancel { background: #F1E9D6; color: #22301F; }
+  .btn-save { background: #22301F; color: #FAF5EA; }
+
+  .loading { text-align: center; padding: 40px; opacity: 0.5; font-size: 13px; }
+
+  .fab { padding-bottom: calc(14px + env(safe-area-inset-bottom)); bottom: calc(24px + env(safe-area-inset-bottom)); }
+
+  @media (min-width: 640px) {
+    #app { max-width: 720px; }
+    .list { grid-template-columns: 1fr 1fr; display: grid; }
+    .stats { max-width: 720px; }
+    .modal-bg { align-items: center; }
+    .modal { max-width: 420px; border-radius: 16px; }
+  }
+  @media (min-width: 1024px) {
+    #app { max-width: 960px; }
+    .list { grid-template-columns: 1fr 1fr 1fr; }
+    .stats { max-width: 960px; }
+  }
+</style>
+</head>
+<body>
+
+<div id="app">
+  <header>
+    <h1>Reel tracker</h1>
+    <p>Little Valie Atelier — Tried &amp; Tested</p>
+  </header>
+  <div class="stats" id="stats"></div>
+  <div class="list" id="list"><div class="loading">Loading your reels…</div></div>
+</div>
+
+
+<button class="fab" onclick="openModal()">+ New reel</button>
+
+<div class="modal-bg" id="modalBg">
+  <div class="modal">
+    <h2>New reel</h2>
+    <div class="field">
+      <label>Product / title</label>
+      <input id="fTitle" placeholder="Insta360 Hello Kitty review">
+    </div>
+    <div class="field">
+      <label>Hook line</label>
+      <textarea id="fHook" placeholder="I run a slow-design brand... and then this showed up."></textarea>
+    </div>
+    <div class="modal-actions">
+      <button class="btn-cancel" onclick="closeModal()">Cancel</button>
+      <button class="btn-save" onclick="saveReel()">Save reel</button>
+    </div>
+  </div>
+</div>
+
+<script>
+const STAGES = ['Idea','Scripted','Filming','Editing','Posted'];
+let reels = [];
+let nextNum = 1;
+
+async function loadReels() {
+  try {
+    const res = await window.storage.get('reels', false);
+    reels = res ? JSON.parse(res.value) : [];
+  } catch (e) {
+    reels = [];
+  }
+  try {
+    const c = await window.storage.get('reelCounter', false);
+    nextNum = c ? JSON.parse(c.value) : 1;
+  } catch (e) {
+    nextNum = 1;
+  }
+  render();
+}
+
+async function persist() {
+  try {
+    await window.storage.set('reels', JSON.stringify(reels), false);
+  } catch (e) {
+    console.error('Save failed', e);
+  }
+}
+
+function openModal() {
+  document.getElementById('fTitle').value = '';
+  document.getElementById('fHook').value = '';
+  document.getElementById('modalBg').classList.add('open');
+}
+function closeModal() {
+  document.getElementById('modalBg').classList.remove('open');
+}
+
+function saveReel() {
+  const title = document.getElementById('fTitle').value.trim();
+  if (!title) {
+    document.getElementById('fTitle').style.borderColor = '#C97A5D';
+    return;
+  }
+  const hook = document.getElementById('fHook').value.trim();
+  const code = 'LVA-' + String(nextNum).padStart(3, '0');
+  reels.unshift({ id: Date.now().toString(), code, title, hook, stage: 0, createdAt: new Date().toISOString() });
+  nextNum += 1;
+  persist();
+  window.storage.set('reelCounter', JSON.stringify(nextNum), false).catch(e => console.error('Counter save failed', e));
+  closeModal();
+  render();
+}
+
+function setStage(id, stage) {
+  const r = reels.find(x => x.id === id);
+  if (r) r.stage = stage;
+  persist();
+  render();
+}
+
+function deleteReel(id) {
+  reels = reels.filter(x => x.id !== id);
+  persist();
+  render();
+}
+
+function render() {
+  const list = document.getElementById('list');
+  const stats = document.getElementById('stats');
+
+  const posted = reels.filter(r => r.stage === 4).length;
+  const inProgress = reels.length - posted;
+  stats.innerHTML = `
+    <div class="stat"><div class="n">${reels.length}</div><div class="l">Total</div></div>
+    <div class="stat"><div class="n">${inProgress}</div><div class="l">In progress</div></div>
+    <div class="stat"><div class="n">${posted}</div><div class="l">Posted</div></div>
+  `;
+
+  if (reels.length === 0) {
+    list.innerHTML = '<div class="empty">No reels yet. Tap "New reel" to plan your first one.</div>';
+    return;
+  }
+
+  list.innerHTML = reels.map(r => `
+    <div class="card">
+      <div class="card-top">
+        <div>
+          <div class="code">${r.code || 'LVA-000'}</div>
+          <div class="card-title">${escapeHtml(r.title)}</div>
+          ${r.hook ? `<div class="card-hook">"${escapeHtml(r.hook)}"</div>` : ''}
+        </div>
+        <button class="del" onclick="deleteReel('${r.id}')" aria-label="Delete">&times;</button>
+      </div>
+      <div class="stage-row">
+        ${STAGES.map((s, i) => `<button class="stage-btn s${i} ${r.stage === i ? 'active' : ''}" onclick="setStage('${r.id}', ${i})">${s}</button>`).join('')}
+      </div>
+    </div>
+  `).join('');
+}
+
+function escapeHtml(str) {
+  const div = document.createElement('div');
+  div.textContent = str;
+  return div.innerHTML;
+}
+
+loadReels();
+</script>
+
+</body>
+</html>
