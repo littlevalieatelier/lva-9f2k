@@ -107,6 +107,31 @@
   .chip.selected { background: #22301F; border-color: #22301F; color: #FAF5EA; }
   .stage-row .chip { padding: 0 12px; font-size: 12px; }
 
+  /* --- Per-stage inline content: each stage keeps its own independent fields --- */
+  .stage-detail { margin-top: 12px; padding-top: 12px; border-top: 1px solid var(--md-outline-variant); display: flex; flex-direction: column; gap: 8px; }
+  .stage-field label { display: block; font: var(--type-label-small); color: var(--md-on-surface-variant); text-transform: uppercase; letter-spacing: 0.04em; margin-bottom: 4px; }
+  .stage-field textarea, .stage-field input { width: 100%; border: 1px solid var(--md-outline); border-radius: 8px; padding: 8px 10px; font: var(--type-body-medium); background: var(--md-surface-container); color: var(--md-on-surface); }
+  .stage-field textarea { min-height: 44px; resize: none; }
+
+  .storyboard-toggle { display: flex; align-items: center; justify-content: center; gap: 6px; width: 100%; min-height: 40px; background: none; border: 1px dashed var(--md-outline); border-radius: 8px; padding: 8px 12px; color: var(--md-on-surface-variant); font: var(--type-label-medium); cursor: pointer; }
+  .storyboard-title { font: var(--type-label-large); color: var(--md-on-surface); }
+  .storyboard { display: flex; flex-direction: column; gap: 8px; }
+  .shot { border: 1px solid var(--md-outline-variant); border-radius: 8px; padding: 8px; display: flex; flex-direction: column; gap: 6px; }
+  .shot-row-top { display: flex; align-items: center; justify-content: space-between; }
+  .shot-num { font: var(--type-label-medium); color: var(--md-on-surface-variant); }
+  .shot-actions { display: flex; gap: 2px; }
+  .icon-btn-sm { display: inline-flex; align-items: center; justify-content: center; min-width: 40px; min-height: 40px; background: none; border: none; border-radius: 999px; color: var(--md-on-surface-variant); cursor: pointer; transition: background-color var(--md-duration-short) var(--md-easing-standard); }
+  .icon-btn-sm:hover { background: rgba(34,48,31,0.08); }
+  .icon-btn-sm:disabled { opacity: 0.3; cursor: default; }
+  .icon-btn-sm:disabled:hover { background: none; }
+  .icon-btn-sm .material-symbols-outlined { font-size: 18px; }
+  .shot-desc { width: 100%; border: 1px solid var(--md-outline); border-radius: 6px; padding: 6px 8px; font: var(--type-body-small); background: var(--md-surface-container); color: var(--md-on-surface); min-height: 36px; resize: none; }
+  .shot-meta-row { display: flex; gap: 6px; }
+  .shot-meta-row select { flex: 1; border: 1px solid var(--md-outline); border-radius: 6px; padding: 6px 8px; font: var(--type-body-small); background: var(--md-surface-container); color: var(--md-on-surface); min-width: 0; }
+  .shot-meta-row input[type="number"] { width: 64px; border: 1px solid var(--md-outline); border-radius: 6px; padding: 6px 8px; font: var(--type-body-small); background: var(--md-surface-container); color: var(--md-on-surface); }
+  .shot-audio { width: 100%; border: 1px solid var(--md-outline); border-radius: 6px; padding: 6px 8px; font: var(--type-body-small); background: var(--md-surface-container); color: var(--md-on-surface); }
+  .storyboard-add { display: flex; align-items: center; justify-content: center; gap: 6px; width: 100%; min-height: 40px; background: none; border: 1px dashed var(--md-outline); border-radius: 8px; padding: 8px 12px; color: var(--md-on-primary-container); font: var(--type-label-medium); cursor: pointer; }
+
   .list { padding: 8px 16px; display: flex; flex-direction: column; gap: 8px; }
   .empty { text-align: center; padding: 60px 20px; color: var(--md-on-surface-variant); font: var(--type-body-medium); }
 
@@ -116,8 +141,6 @@
   .card-top { display: flex; justify-content: space-between; align-items: flex-start; gap: 8px; }
   .code { display: inline-block; font: var(--type-label-medium); color: var(--md-on-primary-container); background: var(--md-primary-container); border-radius: 6px; padding: 3px 8px; letter-spacing: 0.03em; margin-bottom: 4px; }
   .card-title { font: var(--type-title-medium); }
-  .card-hook { font: var(--type-body-medium); color: var(--md-on-surface-variant); margin-top: 4px; font-style: italic; }
-  .card-notes { font: var(--type-body-small); color: var(--md-on-surface-variant); margin-top: 8px; white-space: pre-wrap; }
 
   .card-actions { display: flex; }
   .icon-btn { display: inline-flex; align-items: center; justify-content: center; min-width: 48px; min-height: 48px; background: none; border: none; border-radius: 999px; cursor: pointer; transition: background-color var(--md-duration-short) var(--md-easing-standard); }
@@ -262,22 +285,10 @@
     </div>
     <p class="m3-supporting-text" id="fTitleSupport">e.g. "Insta360 Hello Kitty review"</p>
 
-    <div class="m3-field m3-field-select">
+    <div class="m3-field m3-field-select" id="fStageField">
       <select id="fStage"></select>
-      <label for="fStage">Stage</label>
+      <label for="fStage">Starting stage</label>
     </div>
-
-    <div class="m3-field">
-      <textarea id="fHook" placeholder=" "></textarea>
-      <label for="fHook">Hook line</label>
-    </div>
-    <p class="m3-supporting-text">e.g. "I run a slow-design brand... and then this showed up."</p>
-
-    <div class="m3-field">
-      <textarea id="fNotes" placeholder=" "></textarea>
-      <label for="fNotes">Notes</label>
-    </div>
-    <p class="m3-supporting-text">e.g. props needed, filming location, edit ideas</p>
 
     <div class="modal-actions">
       <button class="btn btn-text" onclick="closeModal()">Cancel</button>
@@ -313,6 +324,8 @@ db.enablePersistence({ synchronizeTabs: true }).catch(err => {
 });
 
 const STAGES = ['Idea','Scripted','Filming','Editing','Posted'];
+const STAGE_KEYS = ['idea','scripted','filming','editing','posted'];
+const SHOT_TYPES = ['Hook','Wide','Detail','POV','Talking-head','B-roll'];
 let reels = [];
 let nextNum = 1;
 let stageFilter = 'all';
@@ -323,6 +336,45 @@ let unsubReels = null;
 let unsubCounter = null;
 let pendingDeletes = new Map();
 let snackbarTimeout = null;
+let pendingPrefill = null;
+
+function emptyStages() {
+  return {
+    idea: { notes: '' },
+    scripted: { hook: '', notes: '', shots: [] },
+    filming: { notes: '' },
+    editing: { notes: '' },
+    posted: { notes: '', caption: '', link: '' }
+  };
+}
+
+function normalizeReel(id, data) {
+  if (data.stages) {
+    const stages = emptyStages();
+    STAGE_KEYS.forEach(k => { if (data.stages[k]) Object.assign(stages[k], data.stages[k]); });
+    return { id, code: data.code, title: data.title, currentStage: typeof data.currentStage === 'number' ? data.currentStage : 0, stages, createdAt: data.createdAt, _needsMigration: false };
+  }
+  const stages = emptyStages();
+  stages.idea.notes = [data.hook, data.notes].filter(Boolean).join('\n\n');
+  return { id, code: data.code, title: data.title, currentStage: typeof data.stage === 'number' ? data.stage : 0, stages, createdAt: data.createdAt, _needsMigration: true };
+}
+
+function migratePendingReels() {
+  const toMigrate = reels.filter(r => r._needsMigration);
+  if (toMigrate.length === 0) return;
+  const userRef = db.collection('users').doc(currentUser.uid);
+  const batch = db.batch();
+  toMigrate.forEach(r => {
+    batch.update(userRef.collection('reels').doc(r.id), {
+      currentStage: r.currentStage,
+      stages: r.stages,
+      hook: firebase.firestore.FieldValue.delete(),
+      notes: firebase.firestore.FieldValue.delete(),
+      stage: firebase.firestore.FieldValue.delete()
+    });
+  });
+  batch.commit().catch(err => console.error('Migration failed', err));
+}
 
 function populateStageSelect() {
   document.getElementById('fStage').innerHTML = STAGES.map((s, i) => `<option value="${i}">${s}</option>`).join('');
@@ -402,13 +454,14 @@ function prefillFromQuery() {
 
   openModal();
   if (params.has('title')) document.getElementById('fTitle').value = params.get('title');
-  if (params.has('hook')) document.getElementById('fHook').value = params.get('hook');
-  if (params.has('notes')) document.getElementById('fNotes').value = params.get('notes');
   if (params.has('stage')) {
     const stageIdx = parseInt(params.get('stage'), 10);
     if (!isNaN(stageIdx) && stageIdx >= 0 && stageIdx < STAGES.length) {
       document.getElementById('fStage').value = stageIdx;
     }
+  }
+  if (params.has('hook') || params.has('notes')) {
+    pendingPrefill = { hook: params.get('hook') || '', notes: params.get('notes') || '' };
   }
 }
 
@@ -421,9 +474,10 @@ function setOffline(fromCache) {
 function subscribeReels() {
   const ref = db.collection('users').doc(currentUser.uid).collection('reels').orderBy('createdAt', 'desc');
   unsubReels = ref.onSnapshot(snapshot => {
-    reels = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+    reels = snapshot.docs.map(doc => normalizeReel(doc.id, doc.data()));
     setOffline(snapshot.metadata.fromCache);
     render();
+    migratePendingReels();
   }, err => {
     console.error('Reels listener error', err);
   });
@@ -440,11 +494,11 @@ function subscribeCounter() {
 
 function openModal() {
   editingId = null;
+  pendingPrefill = null;
   document.getElementById('modalTitle').textContent = 'New reel';
   document.getElementById('fTitle').value = '';
   document.getElementById('fStage').value = 0;
-  document.getElementById('fHook').value = '';
-  document.getElementById('fNotes').value = '';
+  document.getElementById('fStageField').style.display = 'block';
   clearFieldError();
   document.getElementById('modalBg').classList.add('open');
 }
@@ -455,9 +509,7 @@ function openEditModal(id) {
   editingId = id;
   document.getElementById('modalTitle').textContent = 'Edit reel';
   document.getElementById('fTitle').value = r.title;
-  document.getElementById('fStage').value = r.stage;
-  document.getElementById('fHook').value = r.hook || '';
-  document.getElementById('fNotes').value = r.notes || '';
+  document.getElementById('fStageField').style.display = 'none';
   clearFieldError();
   document.getElementById('modalBg').classList.add('open');
 }
@@ -484,20 +536,24 @@ function saveReel() {
     showFieldError();
     return;
   }
-  const hook = document.getElementById('fHook').value.trim();
-  const notes = document.getElementById('fNotes').value.trim();
-  const stage = parseInt(document.getElementById('fStage').value, 10);
   const userRef = db.collection('users').doc(currentUser.uid);
 
   if (editingId) {
-    userRef.collection('reels').doc(editingId).update({ title, stage, hook, notes }).catch(err => {
+    userRef.collection('reels').doc(editingId).update({ title }).catch(err => {
       console.error('Save failed', err);
     });
   } else {
+    const currentStage = parseInt(document.getElementById('fStage').value, 10);
+    const stages = emptyStages();
+    if (pendingPrefill) {
+      const merged = [pendingPrefill.hook, pendingPrefill.notes].filter(Boolean).join('\n\n');
+      if (merged) stages.idea.notes = merged;
+      pendingPrefill = null;
+    }
     const code = 'LVA-' + String(nextNum).padStart(3, '0');
     const reelRef = userRef.collection('reels').doc();
     const batch = db.batch();
-    batch.set(reelRef, { code, title, hook, notes, stage, createdAt: firebase.firestore.FieldValue.serverTimestamp() });
+    batch.set(reelRef, { code, title, currentStage, stages, createdAt: firebase.firestore.FieldValue.serverTimestamp() });
     batch.set(userRef, { nextReelNum: nextNum + 1 }, { merge: true });
     nextNum += 1;
     batch.commit().catch(err => {
@@ -508,9 +564,60 @@ function saveReel() {
 }
 
 function setStage(id, stage) {
-  db.collection('users').doc(currentUser.uid).collection('reels').doc(id).update({ stage }).catch(err => {
+  db.collection('users').doc(currentUser.uid).collection('reels').doc(id).update({ currentStage: stage }).catch(err => {
     console.error('Stage update failed', err);
   });
+}
+
+function saveStageField(id, stageKey, field, value) {
+  const path = 'stages.' + stageKey + '.' + field;
+  db.collection('users').doc(currentUser.uid).collection('reels').doc(id).update({ [path]: value }).catch(err => {
+    console.error('Stage field save failed', err);
+  });
+}
+
+function saveShots(id, shots) {
+  db.collection('users').doc(currentUser.uid).collection('reels').doc(id).update({ 'stages.scripted.shots': shots }).catch(err => {
+    console.error('Storyboard save failed', err);
+  });
+}
+
+function addShot(id) {
+  const r = reels.find(x => x.id === id);
+  if (!r) return;
+  const shots = r.stages.scripted.shots.slice();
+  shots.push({ description: '', type: SHOT_TYPES[0], audio: '', duration: null });
+  saveShots(id, shots);
+}
+
+function updateShot(id, index, field, rawValue) {
+  const r = reels.find(x => x.id === id);
+  if (!r) return;
+  const shots = r.stages.scripted.shots.slice();
+  if (!shots[index]) return;
+  const value = field === 'duration' ? (rawValue === '' ? null : parseFloat(rawValue)) : rawValue;
+  shots[index] = Object.assign({}, shots[index], { [field]: value });
+  saveShots(id, shots);
+}
+
+function deleteShot(id, index) {
+  const r = reels.find(x => x.id === id);
+  if (!r) return;
+  const shots = r.stages.scripted.shots.slice();
+  shots.splice(index, 1);
+  saveShots(id, shots);
+}
+
+function moveShot(id, index, direction) {
+  const r = reels.find(x => x.id === id);
+  if (!r) return;
+  const shots = r.stages.scripted.shots.slice();
+  const newIndex = index + direction;
+  if (newIndex < 0 || newIndex >= shots.length) return;
+  const tmp = shots[index];
+  shots[index] = shots[newIndex];
+  shots[newIndex] = tmp;
+  saveShots(id, shots);
 }
 
 function deleteReel(id) {
@@ -562,7 +669,7 @@ function render() {
   const stats = document.getElementById('stats');
   const filterRow = document.getElementById('filterRow');
 
-  const posted = reels.filter(r => r.stage === 4).length;
+  const posted = reels.filter(r => r.currentStage === 4).length;
   const inProgress = reels.length - posted;
   stats.innerHTML = `
     <div class="stat"><div class="n">${reels.length}</div><div class="l">Total</div></div>
@@ -579,7 +686,7 @@ function render() {
   filterRow.innerHTML = chip(stageFilter === 'all', 'All', "setFilter('all')") +
     STAGES.map((s, i) => chip(stageFilter === i, s, `setFilter(${i})`)).join('');
 
-  const filtered = (stageFilter === 'all' ? reels : reels.filter(r => r.stage === stageFilter))
+  const filtered = (stageFilter === 'all' ? reels : reels.filter(r => r.currentStage === stageFilter))
     .filter(r => !pendingDeletes.has(r.id));
 
   if (reels.length === 0) {
@@ -597,8 +704,6 @@ function render() {
         <div>
           <div class="code">${r.code || 'LVA-000'}</div>
           <div class="card-title">${escapeHtml(r.title)}</div>
-          ${r.hook ? `<div class="card-hook">"${escapeHtml(r.hook)}"</div>` : ''}
-          ${r.notes ? `<div class="card-notes">${escapeHtml(r.notes)}</div>` : ''}
         </div>
         <div class="card-actions">
           <button class="icon-btn edit" onclick="openEditModal('${r.id}')" aria-label="Edit"><span class="material-symbols-outlined">edit</span></button>
@@ -606,16 +711,92 @@ function render() {
         </div>
       </div>
       <div class="stage-row">
-        ${STAGES.map((s, i) => chip(r.stage === i, s, `setStage('${r.id}', ${i})`)).join('')}
+        ${STAGES.map((s, i) => chip(r.currentStage === i, s, `setStage('${r.id}', ${i})`)).join('')}
       </div>
+      ${renderStageDetail(r)}
     </div>
   `).join('');
+}
+
+function stageTextarea(reelId, stageKey, field, label, value) {
+  return `<div class="stage-field">
+    <label>${label}</label>
+    <textarea onblur="saveStageField('${reelId}','${stageKey}','${field}', this.value)">${escapeHtml(value || '')}</textarea>
+  </div>`;
+}
+
+function stageInput(reelId, stageKey, field, label, value) {
+  return `<div class="stage-field">
+    <label>${label}</label>
+    <input value="${escapeAttr(value || '')}" onblur="saveStageField('${reelId}','${stageKey}','${field}', this.value)">
+  </div>`;
+}
+
+function renderStageDetail(r) {
+  const key = STAGE_KEYS[r.currentStage];
+  const s = r.stages[key];
+  let fields = '';
+  if (key === 'scripted') fields += stageTextarea(r.id, key, 'hook', 'Hook line', s.hook);
+  fields += stageTextarea(r.id, key, 'notes', 'Notes', s.notes);
+  if (key === 'posted') {
+    fields += stageTextarea(r.id, key, 'caption', 'Caption', s.caption);
+    fields += stageInput(r.id, key, 'link', 'Link', s.link);
+  }
+  const storyboard = key === 'scripted' ? renderStoryboardExpanded(r) : renderStoryboardCollapsed(r);
+  return `<div class="stage-detail">${fields}${storyboard}</div>`;
+}
+
+function renderStoryboardCollapsed(r) {
+  const shots = r.stages.scripted.shots || [];
+  const label = shots.length > 0 ? `Storyboard (${shots.length} shot${shots.length === 1 ? '' : 's'})` : '+ Add storyboard';
+  return `<button type="button" class="storyboard-toggle" onclick="setStage('${r.id}', 1)">
+    <span class="material-symbols-outlined" style="font-size:16px">movie</span>${label}
+  </button>`;
+}
+
+function renderStoryboardExpanded(r) {
+  const shots = r.stages.scripted.shots || [];
+  const rows = shots.map((shot, i) => renderShotRow(r.id, i, shot, shots.length)).join('');
+  return `
+    <div class="storyboard-title">Storyboard${shots.length ? ' (' + shots.length + ')' : ''}</div>
+    <div class="storyboard">${rows}</div>
+    <button type="button" class="storyboard-add" onclick="addShot('${r.id}')">
+      <span class="material-symbols-outlined" style="font-size:16px">add</span>Add shot
+    </button>
+  `;
+}
+
+function renderShotRow(reelId, i, shot, total) {
+  return `
+    <div class="shot">
+      <div class="shot-row-top">
+        <span class="shot-num">Shot ${i + 1}</span>
+        <div class="shot-actions">
+          <button type="button" class="icon-btn-sm" onclick="moveShot('${reelId}', ${i}, -1)" ${i === 0 ? 'disabled' : ''} aria-label="Move up"><span class="material-symbols-outlined">arrow_upward</span></button>
+          <button type="button" class="icon-btn-sm" onclick="moveShot('${reelId}', ${i}, 1)" ${i === total - 1 ? 'disabled' : ''} aria-label="Move down"><span class="material-symbols-outlined">arrow_downward</span></button>
+          <button type="button" class="icon-btn-sm" onclick="deleteShot('${reelId}', ${i})" aria-label="Delete shot"><span class="material-symbols-outlined">close</span></button>
+        </div>
+      </div>
+      <textarea class="shot-desc" placeholder="Frame / visual description" onblur="updateShot('${reelId}', ${i}, 'description', this.value)">${escapeHtml(shot.description || '')}</textarea>
+      <div class="shot-meta-row">
+        <select onchange="updateShot('${reelId}', ${i}, 'type', this.value)">
+          ${SHOT_TYPES.map(t => `<option ${shot.type === t ? 'selected' : ''}>${t}</option>`).join('')}
+        </select>
+        <input type="number" min="0" step="1" placeholder="sec" value="${shot.duration != null ? escapeAttr(String(shot.duration)) : ''}" onblur="updateShot('${reelId}', ${i}, 'duration', this.value)">
+      </div>
+      <input class="shot-audio" placeholder="Audio / VO line (optional)" value="${escapeAttr(shot.audio || '')}" onblur="updateShot('${reelId}', ${i}, 'audio', this.value)">
+    </div>
+  `;
 }
 
 function escapeHtml(str) {
   const div = document.createElement('div');
   div.textContent = str;
   return div.innerHTML;
+}
+
+function escapeAttr(str) {
+  return escapeHtml(str).replace(/"/g, '&quot;');
 }
 
 initAuth();
