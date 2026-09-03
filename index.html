@@ -89,6 +89,9 @@
   .signout:hover { background: rgba(250,245,234,0.08); }
   .signout .material-symbols-outlined { font-size: 16px; }
 
+  .save-status { font: var(--type-body-small); color: var(--md-on-surface-variant); text-align: center; padding: 6px 16px 0; }
+  .save-status.error { color: var(--md-on-secondary-container); }
+
   .offline-banner { background: var(--md-surface-variant); color: var(--md-on-surface-variant); font: var(--type-body-small); text-align: center; padding: 8px 16px; }
 
   .stats { display: flex; gap: 8px; padding: 16px 16px 8px; }
@@ -113,13 +116,8 @@
   .stage-detail { margin-top: 12px; padding-top: 12px; border-top: 1px solid var(--md-outline-variant); display: flex; flex-direction: column; gap: 8px; }
   .stage-field label { display: flex; align-items: center; font: var(--type-label-small); color: var(--md-on-surface-variant); text-transform: uppercase; letter-spacing: 0.04em; margin-bottom: 4px; }
   .stage-field textarea, .stage-field input, .stage-field select { width: 100%; border: 1px solid var(--md-outline); border-radius: 8px; padding: 8px 10px; font: var(--type-body-medium); background: var(--md-surface-container); color: var(--md-on-surface); }
-  .stage-field textarea { min-height: 44px; resize: none; }
+  .stage-field textarea { min-height: 80px; resize: vertical; overflow: hidden; }
   .stage-field select { appearance: none; cursor: pointer; background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='20' height='20' viewBox='0 0 24 24' fill='none' stroke='%2342493F' stroke-width='2'%3E%3Cpath d='M6 9l6 6 6-6'/%3E%3C/svg%3E"); background-repeat: no-repeat; background-position: right 10px center; padding-right: 32px; }
-
-  /* --- Quiet "Saved" confirmation: Pine only, never Gold/Terracotta --- */
-  .saved-indicator { display: inline-flex; align-items: center; font: var(--type-label-small); text-transform: none; letter-spacing: 0; color: var(--md-tertiary); opacity: 0; margin-left: 6px; transition: opacity 400ms var(--md-easing-standard); }
-  .saved-indicator.show { opacity: 1; }
-  .saved-indicator .material-symbols-outlined { font-size: 13px; }
 
   /* --- Checkboxes: native, Pine accent-color per design system (never a Gold/Terracotta fill) --- */
   .checkbox-field { display: flex; align-items: center; gap: 8px; padding: 6px 0; cursor: pointer; }
@@ -143,7 +141,7 @@
   .icon-btn-sm:disabled { opacity: 0.3; cursor: default; }
   .icon-btn-sm:disabled:hover { background: none; }
   .icon-btn-sm .material-symbols-outlined { font-size: 18px; }
-  .shot-desc { width: 100%; border: 1px solid var(--md-outline); border-radius: 6px; padding: 6px 8px; font: var(--type-body-small); background: var(--md-surface-container); color: var(--md-on-surface); min-height: 36px; resize: none; }
+  .shot-desc { width: 100%; border: 1px solid var(--md-outline); border-radius: 6px; padding: 6px 8px; font: var(--type-body-small); background: var(--md-surface-container); color: var(--md-on-surface); min-height: 80px; resize: vertical; overflow: hidden; }
   .shot-meta-row { display: flex; gap: 6px; }
   .shot-meta-row select { flex: 1; border: 1px solid var(--md-outline); border-radius: 6px; padding: 6px 8px; font: var(--type-body-small); background: var(--md-surface-container); color: var(--md-on-surface); min-width: 0; }
   .shot-meta-row input[type="number"] { width: 64px; border: 1px solid var(--md-outline); border-radius: 6px; padding: 6px 8px; font: var(--type-body-small); background: var(--md-surface-container); color: var(--md-on-surface); }
@@ -197,7 +195,7 @@
     font: var(--type-body-large); background: var(--md-surface-container); color: var(--md-on-surface);
     transition: border-color var(--md-duration-short) var(--md-easing-standard);
   }
-  .m3-field textarea { resize: none; min-height: 56px; }
+  .m3-field textarea { resize: vertical; min-height: 80px; overflow: hidden; }
   .m3-field select { appearance: none; cursor: pointer; background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='20' height='20' viewBox='0 0 24 24' fill='none' stroke='%2342493F' stroke-width='2'%3E%3Cpath d='M6 9l6 6 6-6'/%3E%3C/svg%3E"); background-repeat: no-repeat; background-position: right 12px center; padding-right: 36px; }
   .m3-field input:focus, .m3-field textarea:focus, .m3-field select:focus { outline: none; border-color: var(--md-primary); border-width: 2px; }
   .m3-field input:focus, .m3-field textarea:focus { padding: 19px 15px 7px; }
@@ -303,6 +301,7 @@
     </div>
     <p>Little Valie Atelier — Tried &amp; Tested</p>
   </header>
+  <div class="save-status" id="saveStatus" hidden></div>
   <div class="offline-banner" id="offlineBanner" hidden>You're offline — showing cached reels. Changes will sync once you're back online.</div>
   <div class="stats" id="stats"></div>
   <div class="filter-row" id="filterRow"></div>
@@ -389,7 +388,8 @@ let snackbarTimeout = null;
 let pendingPrefill = null;
 let editingTitleId = null;
 let debounceTimers = {};
-let savedIndicatorTimers = {};
+let pendingSaveCount = 0;
+let saveHasFailed = false;
 
 const FILMING_DEFAULTS = ['Camera charged', 'SD card cleared', 'Tripod packed', 'Lighting checked', 'Location confirmed'];
 
@@ -672,16 +672,18 @@ function saveReel() {
   batch.set(reelRef, { code, title, currentStage, stages, shots: [], createdAt: firebase.firestore.FieldValue.serverTimestamp() });
   batch.set(userRef, { nextReelNum: nextNum + 1 }, { merge: true });
   nextNum += 1;
-  batch.commit().catch(err => {
-    console.error('Save failed', err);
-  });
+  beginSave();
+  batch.commit()
+    .then(() => endSave(true))
+    .catch(err => { console.error('Save failed', err); endSave(false); });
   closeModal();
 }
 
 function setStage(id, stage) {
-  db.collection('users').doc(currentUser.uid).collection('reels').doc(id).update({ currentStage: stage }).catch(err => {
-    console.error('Stage update failed', err);
-  });
+  beginSave();
+  reelDocRef(id).update({ currentStage: stage })
+    .then(() => endSave(true))
+    .catch(err => { console.error('Stage update failed', err); endSave(false); });
 }
 
 // --- Generic auto-save: debounced ~1s after typing stops, or immediately on blur ---
@@ -689,34 +691,65 @@ function reelDocRef(id) {
   return db.collection('users').doc(currentUser.uid).collection('reels').doc(id);
 }
 
-// Indicator shows synchronously at the moment the save is initiated, not gated on the
-// write promise resolving — the real onSnapshot listener can trigger a render() (which
-// replaces this DOM node) at any point relative to the promise, so waiting on .then()
-// races that re-render and can show the checkmark on an element that's already gone.
+// Global save-status line, replacing the old per-field fading checkmark: one persistent
+// status for every write in flight, so "all changes saved" reflects the whole document,
+// not just the field you last touched.
+function beginSave() {
+  pendingSaveCount++;
+  setSaveStatus('saving');
+}
+
+function endSave(success) {
+  pendingSaveCount = Math.max(0, pendingSaveCount - 1);
+  if (!success) saveHasFailed = true;
+  if (pendingSaveCount === 0) {
+    setSaveStatus(saveHasFailed ? 'error' : 'saved');
+    saveHasFailed = false;
+  }
+}
+
+function setSaveStatus(state) {
+  const el = document.getElementById('saveStatus');
+  if (!el) return;
+  if (state === 'saving') {
+    el.textContent = 'Saving…';
+  } else if (state === 'saved') {
+    el.textContent = 'All changes saved';
+  } else if (state === 'error') {
+    el.textContent = 'Not saved — will retry';
+  }
+  el.classList.toggle('error', state === 'error');
+  el.hidden = false;
+}
+
+// Auto-grow textareas: called on every keystroke, and once per textarea right after any
+// render() so fields that already have long content aren't stuck at min-height.
+function autoGrowTextarea(el) {
+  el.style.height = 'auto';
+  el.style.height = el.scrollHeight + 'px';
+}
+
+function autoGrowAllTextareas() {
+  document.querySelectorAll('#list textarea').forEach(autoGrowTextarea);
+}
+
 function commitField(reelId, path, value) {
-  reelDocRef(reelId).update({ [path]: value }).catch(err => console.error('Save failed', err));
+  beginSave();
+  reelDocRef(reelId).update({ [path]: value })
+    .then(() => endSave(true))
+    .catch(err => { console.error('Save failed', err); endSave(false); });
 }
 
 function onFieldInput(reelId, path, indicatorKey, value) {
   clearTimeout(debounceTimers[indicatorKey]);
   debounceTimers[indicatorKey] = setTimeout(() => {
     commitField(reelId, path, value);
-    showSavedIndicator(indicatorKey);
   }, 1000);
 }
 
 function onFieldBlur(reelId, path, indicatorKey, value) {
   clearTimeout(debounceTimers[indicatorKey]);
   commitField(reelId, path, value);
-  showSavedIndicator(indicatorKey);
-}
-
-function showSavedIndicator(key) {
-  const el = document.getElementById('saved-' + key);
-  if (!el) return;
-  el.classList.add('show');
-  clearTimeout(savedIndicatorTimers[key]);
-  savedIndicatorTimers[key] = setTimeout(() => { el.classList.remove('show'); }, 2000);
 }
 
 function startEditTitle(id) {
@@ -733,12 +766,14 @@ function saveTitleEdit(id, value) {
   if (!r || !title || title === r.title) { render(); return; }
   commitField(id, 'title', title);
   render();
-  showSavedIndicator(id + '-title');
 }
 
 // --- Storyboard: universal, array field on the reel document ---
 function saveShots(id, shots) {
-  reelDocRef(id).update({ shots }).catch(err => console.error('Storyboard save failed', err));
+  beginSave();
+  reelDocRef(id).update({ shots })
+    .then(() => endSave(true))
+    .catch(err => { console.error('Storyboard save failed', err); endSave(false); });
 }
 
 function addShot(id) {
@@ -781,8 +816,10 @@ function moveShot(id, index, direction) {
 
 // --- Filming pre-shoot checklist: same array-on-document, immediate-save pattern as shots ---
 function saveFilmingChecklist(id, checklist) {
-  reelDocRef(id).update({ 'stages.filming.checklist': checklist }).catch(err => console.error('Filming checklist save failed', err));
-  showSavedIndicator(id + '-filming-checklist');
+  beginSave();
+  reelDocRef(id).update({ 'stages.filming.checklist': checklist })
+    .then(() => endSave(true))
+    .catch(err => { console.error('Filming checklist save failed', err); endSave(false); });
 }
 
 function toggleFilmingItem(id, index, checked) {
@@ -857,18 +894,24 @@ function deleteReel(id) {
 }
 
 function confirmDeleteReel(id) {
+  beginSave();
   reelDocRef(id).update({
     deleted: true,
     deletedAt: firebase.firestore.FieldValue.serverTimestamp()
-  }).catch(err => console.error('Delete failed', err));
+  })
+    .then(() => endSave(true))
+    .catch(err => { console.error('Delete failed', err); endSave(false); });
   showSnackbar('Reel deleted', () => restoreReel(id));
 }
 
 function restoreReel(id) {
+  beginSave();
   reelDocRef(id).update({
     deleted: firebase.firestore.FieldValue.delete(),
     deletedAt: firebase.firestore.FieldValue.delete()
-  }).catch(err => console.error('Restore failed', err));
+  })
+    .then(() => endSave(true))
+    .catch(err => { console.error('Restore failed', err); endSave(false); });
   hideSnackbar();
 }
 
@@ -884,7 +927,10 @@ function hardDeleteReel(id) {
 }
 
 function confirmHardDelete(id) {
-  reelDocRef(id).delete().catch(err => console.error('Permanent delete failed', err));
+  beginSave();
+  reelDocRef(id).delete()
+    .then(() => endSave(true))
+    .catch(err => { console.error('Permanent delete failed', err); endSave(false); });
 }
 
 function showSnackbar(message, onAction) {
@@ -976,7 +1022,6 @@ function render() {
           <div class="card-title">${escapeHtml(r.title)}</div>
           <button type="button" class="icon-btn-sm title-edit" onclick="startEditTitle('${r.id}')" aria-label="Edit title"><span class="material-symbols-outlined">edit</span></button>
         `}
-        <span class="saved-indicator" id="saved-${r.id}-title"><span class="material-symbols-outlined">check</span></span>
       </div>
       <div class="stage-row">
         ${STAGES.map((s, i) => chip(r.currentStage === i, s, `setStage('${r.id}', ${i})`)).join('')}
@@ -990,6 +1035,7 @@ function render() {
     const el = document.getElementById('titleInput-' + editingTitleId);
     if (el) { el.focus(); el.select(); }
   }
+  autoGrowAllTextareas();
 }
 
 function renderTrashCard(r) {
@@ -1008,19 +1054,19 @@ function renderTrashCard(r) {
   </div>`;
 }
 
-function fieldLabel(label, indicatorKey) {
-  return `<label>${label}<span class="saved-indicator" id="saved-${indicatorKey}"><span class="material-symbols-outlined">check</span></span></label>`;
+function fieldLabel(label) {
+  return `<label>${label}</label>`;
 }
 
 function textField(reelId, path, indicatorKey, label, value, multiline) {
   const control = multiline
-    ? `<textarea oninput="onFieldInput('${reelId}','${path}','${indicatorKey}', this.value)" onblur="onFieldBlur('${reelId}','${path}','${indicatorKey}', this.value)">${escapeHtml(value || '')}</textarea>`
+    ? `<textarea oninput="autoGrowTextarea(this); onFieldInput('${reelId}','${path}','${indicatorKey}', this.value)" onblur="onFieldBlur('${reelId}','${path}','${indicatorKey}', this.value)">${escapeHtml(value || '')}</textarea>`
     : `<input value="${escapeAttr(value || '')}" oninput="onFieldInput('${reelId}','${path}','${indicatorKey}', this.value)" onblur="onFieldBlur('${reelId}','${path}','${indicatorKey}', this.value)">`;
-  return `<div class="stage-field">${fieldLabel(label, indicatorKey)}${control}</div>`;
+  return `<div class="stage-field">${fieldLabel(label)}${control}</div>`;
 }
 
 function selectField(reelId, path, indicatorKey, label, value, options) {
-  return `<div class="stage-field">${fieldLabel(label, indicatorKey)}
+  return `<div class="stage-field">${fieldLabel(label)}
     <select onchange="onFieldBlur('${reelId}','${path}','${indicatorKey}', this.value)">
       <option value="" ${!value ? 'selected' : ''} disabled>Choose...</option>
       ${options.map(o => `<option ${value === o ? 'selected' : ''}>${o}</option>`).join('')}
@@ -1032,7 +1078,6 @@ function checkboxField(reelId, path, indicatorKey, label, checked) {
   return `<label class="checkbox-field">
     <input type="checkbox" ${checked ? 'checked' : ''} onchange="onFieldBlur('${reelId}','${path}','${indicatorKey}', this.checked)">
     <span class="checkbox-label">${label}</span>
-    <span class="saved-indicator" id="saved-${indicatorKey}"><span class="material-symbols-outlined">check</span></span>
   </label>`;
 }
 
@@ -1083,7 +1128,6 @@ function renderStageDetail(r) {
 function renderFilmingChecklist(r) {
   const id = r.id;
   const checklist = r.stages.filming.checklist || [];
-  const indicatorKey = id + '-filming-checklist';
   const rows = checklist.map((item, i) => `
     <div class="checklist-item">
       <label class="checkbox-field">
@@ -1094,7 +1138,7 @@ function renderFilmingChecklist(r) {
     </div>
   `).join('');
   return `<div class="stage-field">
-    ${fieldLabel('Pre-shoot checklist', indicatorKey)}
+    ${fieldLabel('Pre-shoot checklist')}
     <div class="checklist">${rows}</div>
     <div class="checklist-add-row">
       <input id="newFilmingItem-${id}" placeholder="Add item..." onkeydown="if(event.key==='Enter'){addFilmingItemFromInput('${id}')}">
@@ -1126,7 +1170,7 @@ function renderShotRow(reelId, i, shot, total) {
           <button type="button" class="icon-btn-sm" onclick="deleteShot('${reelId}', ${i})" aria-label="Delete shot"><span class="material-symbols-outlined">close</span></button>
         </div>
       </div>
-      <textarea class="shot-desc" placeholder="Frame / visual description" onblur="updateShot('${reelId}', ${i}, 'description', this.value)">${escapeHtml(shot.description || '')}</textarea>
+      <textarea class="shot-desc" placeholder="Frame / visual description" oninput="autoGrowTextarea(this)" onblur="updateShot('${reelId}', ${i}, 'description', this.value)">${escapeHtml(shot.description || '')}</textarea>
       <div class="shot-meta-row">
         <select onchange="updateShot('${reelId}', ${i}, 'type', this.value)">
           ${SHOT_TYPES.map(t => `<option ${shot.type === t ? 'selected' : ''}>${t}</option>`).join('')}
