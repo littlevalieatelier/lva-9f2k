@@ -109,13 +109,24 @@
 
   /* --- Per-stage inline content: each stage keeps its own independent fields --- */
   .stage-detail { margin-top: 12px; padding-top: 12px; border-top: 1px solid var(--md-outline-variant); display: flex; flex-direction: column; gap: 8px; }
-  .stage-field label { display: block; font: var(--type-label-small); color: var(--md-on-surface-variant); text-transform: uppercase; letter-spacing: 0.04em; margin-bottom: 4px; }
-  .stage-field textarea, .stage-field input { width: 100%; border: 1px solid var(--md-outline); border-radius: 8px; padding: 8px 10px; font: var(--type-body-medium); background: var(--md-surface-container); color: var(--md-on-surface); }
+  .stage-field label { display: flex; align-items: center; font: var(--type-label-small); color: var(--md-on-surface-variant); text-transform: uppercase; letter-spacing: 0.04em; margin-bottom: 4px; }
+  .stage-field textarea, .stage-field input, .stage-field select { width: 100%; border: 1px solid var(--md-outline); border-radius: 8px; padding: 8px 10px; font: var(--type-body-medium); background: var(--md-surface-container); color: var(--md-on-surface); }
   .stage-field textarea { min-height: 44px; resize: none; }
+  .stage-field select { appearance: none; cursor: pointer; background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='20' height='20' viewBox='0 0 24 24' fill='none' stroke='%2342493F' stroke-width='2'%3E%3Cpath d='M6 9l6 6 6-6'/%3E%3C/svg%3E"); background-repeat: no-repeat; background-position: right 10px center; padding-right: 32px; }
 
-  .storyboard-toggle { display: flex; align-items: center; justify-content: center; gap: 6px; width: 100%; min-height: 40px; background: none; border: 1px dashed var(--md-outline); border-radius: 8px; padding: 8px 12px; color: var(--md-on-surface-variant); font: var(--type-label-medium); cursor: pointer; }
-  .storyboard-title { font: var(--type-label-large); color: var(--md-on-surface); }
-  .storyboard { display: flex; flex-direction: column; gap: 8px; }
+  /* --- Quiet "Saved" confirmation: Pine only, never Gold/Terracotta --- */
+  .saved-indicator { display: inline-flex; align-items: center; font: var(--type-label-small); text-transform: none; letter-spacing: 0; color: var(--md-tertiary); opacity: 0; margin-left: 6px; transition: opacity 400ms var(--md-easing-standard); }
+  .saved-indicator.show { opacity: 1; }
+  .saved-indicator .material-symbols-outlined { font-size: 13px; }
+
+  /* --- Checkboxes: native, Pine accent-color per design system (never a Gold/Terracotta fill) --- */
+  .checkbox-field { display: flex; align-items: center; gap: 8px; padding: 6px 0; cursor: pointer; }
+  .checkbox-field input[type="checkbox"] { width: 18px; height: 18px; accent-color: var(--md-tertiary); cursor: pointer; flex-shrink: 0; }
+  .checkbox-field .checkbox-label { font: var(--type-body-medium); color: var(--md-on-surface); flex: 1; }
+  .checklist { display: flex; flex-direction: column; }
+
+  .storyboard-title { font: var(--type-label-large); color: var(--md-on-surface); margin-top: 4px; }
+  .storyboard { display: flex; flex-direction: column; gap: 8px; margin-top: 8px; }
   .shot { border: 1px solid var(--md-outline-variant); border-radius: 8px; padding: 8px; display: flex; flex-direction: column; gap: 6px; }
   .shot-row-top { display: flex; align-items: center; justify-content: space-between; }
   .shot-num { font: var(--type-label-medium); color: var(--md-on-surface-variant); }
@@ -130,7 +141,9 @@
   .shot-meta-row select { flex: 1; border: 1px solid var(--md-outline); border-radius: 6px; padding: 6px 8px; font: var(--type-body-small); background: var(--md-surface-container); color: var(--md-on-surface); min-width: 0; }
   .shot-meta-row input[type="number"] { width: 64px; border: 1px solid var(--md-outline); border-radius: 6px; padding: 6px 8px; font: var(--type-body-small); background: var(--md-surface-container); color: var(--md-on-surface); }
   .shot-audio { width: 100%; border: 1px solid var(--md-outline); border-radius: 6px; padding: 6px 8px; font: var(--type-body-small); background: var(--md-surface-container); color: var(--md-on-surface); }
-  .storyboard-add { display: flex; align-items: center; justify-content: center; gap: 6px; width: 100%; min-height: 40px; background: none; border: 1px dashed var(--md-outline); border-radius: 8px; padding: 8px 12px; color: var(--md-on-primary-container); font: var(--type-label-medium); cursor: pointer; }
+  .shot-captured { padding: 2px 0 0; }
+  .storyboard-add { display: flex; align-items: center; justify-content: center; gap: 6px; width: 100%; min-height: 40px; margin-top: 8px; background: none; border: 1px dashed var(--md-outline); border-radius: 8px; padding: 8px 12px; color: var(--md-on-surface-variant); font: var(--type-label-medium); cursor: pointer; }
+  .storyboard-section { margin-top: 12px; padding-top: 12px; border-top: 1px solid var(--md-outline-variant); }
 
   .list { padding: 8px 16px; display: flex; flex-direction: column; gap: 8px; }
   .empty { text-align: center; padding: 60px 20px; color: var(--md-on-surface-variant); font: var(--type-body-medium); }
@@ -140,18 +153,18 @@
   .card:hover, .card:active { box-shadow: var(--md-elevation-2); background: var(--md-surface-container-hover); }
   .card-top { display: flex; justify-content: space-between; align-items: flex-start; gap: 8px; }
   .code { display: inline-block; font: var(--type-label-medium); color: var(--md-on-primary-container); background: var(--md-primary-container); border-radius: 6px; padding: 3px 8px; letter-spacing: 0.03em; margin-bottom: 4px; }
+  .title-row { display: flex; align-items: center; gap: 2px; flex-wrap: wrap; }
   .card-title { font: var(--type-title-medium); }
+  .title-input { font: var(--type-title-medium); border: 1px solid var(--md-outline); border-radius: 6px; padding: 4px 8px; background: var(--md-surface-container); color: var(--md-on-surface); flex: 1; min-width: 120px; }
+  .title-edit { color: var(--md-on-surface-variant); }
 
-  .card-actions { display: flex; }
   .icon-btn { display: inline-flex; align-items: center; justify-content: center; min-width: 48px; min-height: 48px; background: none; border: none; border-radius: 999px; cursor: pointer; transition: background-color var(--md-duration-short) var(--md-easing-standard); }
   .icon-btn:hover { background: rgba(34,48,31,0.08); }
-  .icon-btn.edit { color: var(--md-primary); }
   .icon-btn.del { color: var(--md-on-surface); }
-  .icon-btn.edit:hover { color: #92621e; background: #f7ecd9; }
   .icon-btn.del:hover { color: #C97A5D; background: #faece7; }
   .icon-btn .material-symbols-outlined { font-size: 20px; }
 
-  /* --- M3 buttons: filled (Save / FAB), text (Cancel) --- */
+  /* --- M3 buttons: filled (Create reel / Sign in), text (Cancel) --- */
   .btn { display: inline-flex; align-items: center; justify-content: center; gap: 6px; min-height: 40px; padding: 0 24px; border-radius: 999px; border: none; font: var(--type-label-large); cursor: pointer; transition: background-color var(--md-duration-short) var(--md-easing-standard); }
   .btn-filled { background: var(--md-primary); color: var(--md-on-primary); }
   .btn-filled:hover { background: color-mix(in srgb, var(--md-primary) 92%, black); }
@@ -160,11 +173,11 @@
   .modal-actions { display: flex; gap: 8px; margin-top: 16px; }
   .modal-actions .btn { flex: 1; }
 
-  /* --- Extended FAB: primary container, elevation level 3, medium-large shape --- */
+  /* --- Extended FAB: the one surface where Gold is used as a background --- */
   .fab { position: fixed; left: 50%; transform: translateX(-50%); bottom: calc(24px + env(safe-area-inset-bottom)); display: inline-flex; align-items: center; gap: 8px; height: 56px; padding: 0 20px; border-radius: 16px; border: none; background: var(--md-primary); color: var(--md-on-primary); font: var(--type-label-large); box-shadow: var(--md-elevation-3); cursor: pointer; transition: box-shadow var(--md-duration-short) var(--md-easing-standard); z-index: 10; }
   .fab:hover { box-shadow: var(--md-elevation-4); }
 
-  /* --- M3 outlined text fields with floating labels --- */
+  /* --- M3 outlined text fields with floating labels (modal) --- */
   .m3-field { position: relative; margin-bottom: 4px; }
   .m3-field input, .m3-field textarea, .m3-field select {
     width: 100%; border: 1px solid var(--md-outline); border-radius: 4px; padding: 20px 16px 8px;
@@ -292,7 +305,7 @@
 
     <div class="modal-actions">
       <button class="btn btn-text" onclick="closeModal()">Cancel</button>
-      <button class="btn btn-filled" onclick="saveReel()">Save reel</button>
+      <button class="btn btn-filled" onclick="saveReel()">Create reel</button>
     </div>
   </div>
 </div>
@@ -323,13 +336,13 @@ db.enablePersistence({ synchronizeTabs: true }).catch(err => {
   console.warn('Offline persistence unavailable:', err.code);
 });
 
-const STAGES = ['Idea','Scripted','Filming','Editing','Posted'];
+const STAGES = ['Ideation','Scripting','Filming','Editing','Posted'];
 const STAGE_KEYS = ['idea','scripted','filming','editing','posted'];
 const SHOT_TYPES = ['Hook','Wide','Detail','POV','Talking-head','B-roll'];
+const GOALS = ['Reach','Nurture','Convert'];
 let reels = [];
 let nextNum = 1;
 let stageFilter = 'all';
-let editingId = null;
 let currentUser = null;
 let isOffline = false;
 let unsubReels = null;
@@ -337,26 +350,64 @@ let unsubCounter = null;
 let pendingDeletes = new Map();
 let snackbarTimeout = null;
 let pendingPrefill = null;
+let editingTitleId = null;
+let debounceTimers = {};
+let savedIndicatorTimers = {};
 
 function emptyStages() {
   return {
-    idea: { notes: '' },
-    scripted: { hook: '', notes: '', shots: [] },
-    filming: { notes: '' },
-    editing: { notes: '' },
-    posted: { notes: '', caption: '', link: '' }
+    idea: { goal: '', conceptNote: '' },
+    scripted: { hook: '', bodyOutline: '', cta: '' },
+    filming: { preShootNotes: '' },
+    editing: { editNotes: '', captionKeywords: '' },
+    posted: { notes: '', caption: '', link: '', checklist: { visualBounds: false, coverAlignment: false, captionsBurnedIn: false, metaTagsLinked: false } }
   };
 }
 
+function emptyShot() {
+  return { description: '', type: SHOT_TYPES[0], audio: '', duration: null, captured: false };
+}
+
+// Reels can currently arrive in any of three shapes: flat legacy (title/hook/notes/stage),
+// the "V1" nested shape shipped previously (stages.idea.notes, stages.scripted.{hook,notes,shots}, ...),
+// or the current shape. normalizeReel() always returns the current shape and flags whether
+// the source doc still needs to be migrated in Firestore.
 function normalizeReel(id, data) {
-  if (data.stages) {
-    const stages = emptyStages();
-    STAGE_KEYS.forEach(k => { if (data.stages[k]) Object.assign(stages[k], data.stages[k]); });
-    return { id, code: data.code, title: data.title, currentStage: typeof data.currentStage === 'number' ? data.currentStage : 0, stages, createdAt: data.createdAt, _needsMigration: false };
-  }
   const stages = emptyStages();
-  stages.idea.notes = [data.hook, data.notes].filter(Boolean).join('\n\n');
-  return { id, code: data.code, title: data.title, currentStage: typeof data.stage === 'number' ? data.stage : 0, stages, createdAt: data.createdAt, _needsMigration: true };
+  let shots = null;
+  let needsMigration = true;
+
+  if (data.stages && data.stages.idea && typeof data.stages.idea.conceptNote === 'string') {
+    // Already current shape — merge onto the scaffold defensively in case a doc predates a field.
+    STAGE_KEYS.forEach(k => { if (data.stages[k]) Object.assign(stages[k], data.stages[k]); });
+    stages.posted.checklist = Object.assign(
+      { visualBounds: false, coverAlignment: false, captionsBurnedIn: false, metaTagsLinked: false },
+      (data.stages.posted && data.stages.posted.checklist) || {}
+    );
+    needsMigration = false;
+    shots = Array.isArray(data.shots) ? data.shots : [];
+  } else if (data.stages) {
+    // V1 nested shape.
+    stages.idea.conceptNote = (data.stages.idea && data.stages.idea.notes) || '';
+    stages.scripted.hook = (data.stages.scripted && data.stages.scripted.hook) || '';
+    stages.filming.preShootNotes = (data.stages.filming && data.stages.filming.notes) || '';
+    stages.editing.editNotes = (data.stages.editing && data.stages.editing.notes) || '';
+    stages.posted.notes = (data.stages.posted && data.stages.posted.notes) || '';
+    stages.posted.caption = (data.stages.posted && data.stages.posted.caption) || '';
+    stages.posted.link = (data.stages.posted && data.stages.posted.link) || '';
+    shots = (data.stages.scripted && data.stages.scripted.shots) || [];
+  } else {
+    // Flat legacy shape.
+    stages.scripted.hook = data.hook || '';
+    stages.idea.conceptNote = data.notes || '';
+    shots = [];
+  }
+
+  shots = shots.map(s => Object.assign(emptyShot(), s));
+  const currentStage = typeof data.currentStage === 'number' ? data.currentStage
+    : (typeof data.stage === 'number' ? data.stage : 0);
+
+  return { id, code: data.code, title: data.title, currentStage, shots, stages, createdAt: data.createdAt, _needsMigration: needsMigration };
 }
 
 function migratePendingReels() {
@@ -368,6 +419,7 @@ function migratePendingReels() {
     batch.update(userRef.collection('reels').doc(r.id), {
       currentStage: r.currentStage,
       stages: r.stages,
+      shots: r.shots,
       hook: firebase.firestore.FieldValue.delete(),
       notes: firebase.firestore.FieldValue.delete(),
       stage: firebase.firestore.FieldValue.delete()
@@ -493,23 +545,10 @@ function subscribeCounter() {
 }
 
 function openModal() {
-  editingId = null;
   pendingPrefill = null;
   document.getElementById('modalTitle').textContent = 'New reel';
   document.getElementById('fTitle').value = '';
   document.getElementById('fStage').value = 0;
-  document.getElementById('fStageField').style.display = 'block';
-  clearFieldError();
-  document.getElementById('modalBg').classList.add('open');
-}
-
-function openEditModal(id) {
-  const r = reels.find(x => x.id === id);
-  if (!r) return;
-  editingId = id;
-  document.getElementById('modalTitle').textContent = 'Edit reel';
-  document.getElementById('fTitle').value = r.title;
-  document.getElementById('fStageField').style.display = 'none';
   clearFieldError();
   document.getElementById('modalBg').classList.add('open');
 }
@@ -537,29 +576,22 @@ function saveReel() {
     return;
   }
   const userRef = db.collection('users').doc(currentUser.uid);
-
-  if (editingId) {
-    userRef.collection('reels').doc(editingId).update({ title }).catch(err => {
-      console.error('Save failed', err);
-    });
-  } else {
-    const currentStage = parseInt(document.getElementById('fStage').value, 10);
-    const stages = emptyStages();
-    if (pendingPrefill) {
-      const merged = [pendingPrefill.hook, pendingPrefill.notes].filter(Boolean).join('\n\n');
-      if (merged) stages.idea.notes = merged;
-      pendingPrefill = null;
-    }
-    const code = 'LVA-' + String(nextNum).padStart(3, '0');
-    const reelRef = userRef.collection('reels').doc();
-    const batch = db.batch();
-    batch.set(reelRef, { code, title, currentStage, stages, createdAt: firebase.firestore.FieldValue.serverTimestamp() });
-    batch.set(userRef, { nextReelNum: nextNum + 1 }, { merge: true });
-    nextNum += 1;
-    batch.commit().catch(err => {
-      console.error('Save failed', err);
-    });
+  const currentStage = parseInt(document.getElementById('fStage').value, 10);
+  const stages = emptyStages();
+  if (pendingPrefill) {
+    if (pendingPrefill.hook) stages.scripted.hook = pendingPrefill.hook;
+    if (pendingPrefill.notes) stages.idea.conceptNote = pendingPrefill.notes;
+    pendingPrefill = null;
   }
+  const code = 'LVA-' + String(nextNum).padStart(3, '0');
+  const reelRef = userRef.collection('reels').doc();
+  const batch = db.batch();
+  batch.set(reelRef, { code, title, currentStage, stages, shots: [], createdAt: firebase.firestore.FieldValue.serverTimestamp() });
+  batch.set(userRef, { nextReelNum: nextNum + 1 }, { merge: true });
+  nextNum += 1;
+  batch.commit().catch(err => {
+    console.error('Save failed', err);
+  });
   closeModal();
 }
 
@@ -569,31 +601,75 @@ function setStage(id, stage) {
   });
 }
 
-function saveStageField(id, stageKey, field, value) {
-  const path = 'stages.' + stageKey + '.' + field;
-  db.collection('users').doc(currentUser.uid).collection('reels').doc(id).update({ [path]: value }).catch(err => {
-    console.error('Stage field save failed', err);
-  });
+// --- Generic auto-save: debounced ~1s after typing stops, or immediately on blur ---
+function reelDocRef(id) {
+  return db.collection('users').doc(currentUser.uid).collection('reels').doc(id);
 }
 
+// Indicator shows synchronously at the moment the save is initiated, not gated on the
+// write promise resolving — the real onSnapshot listener can trigger a render() (which
+// replaces this DOM node) at any point relative to the promise, so waiting on .then()
+// races that re-render and can show the checkmark on an element that's already gone.
+function commitField(reelId, path, value) {
+  reelDocRef(reelId).update({ [path]: value }).catch(err => console.error('Save failed', err));
+}
+
+function onFieldInput(reelId, path, indicatorKey, value) {
+  clearTimeout(debounceTimers[indicatorKey]);
+  debounceTimers[indicatorKey] = setTimeout(() => {
+    commitField(reelId, path, value);
+    showSavedIndicator(indicatorKey);
+  }, 1000);
+}
+
+function onFieldBlur(reelId, path, indicatorKey, value) {
+  clearTimeout(debounceTimers[indicatorKey]);
+  commitField(reelId, path, value);
+  showSavedIndicator(indicatorKey);
+}
+
+function showSavedIndicator(key) {
+  const el = document.getElementById('saved-' + key);
+  if (!el) return;
+  el.classList.add('show');
+  clearTimeout(savedIndicatorTimers[key]);
+  savedIndicatorTimers[key] = setTimeout(() => { el.classList.remove('show'); }, 2000);
+}
+
+function startEditTitle(id) {
+  editingTitleId = id;
+  render();
+  const el = document.getElementById('titleInput-' + id);
+  if (el) { el.focus(); el.select(); }
+}
+
+function saveTitleEdit(id, value) {
+  const title = value.trim();
+  editingTitleId = null;
+  const r = reels.find(x => x.id === id);
+  if (!r || !title || title === r.title) { render(); return; }
+  commitField(id, 'title', title);
+  render();
+  showSavedIndicator(id + '-title');
+}
+
+// --- Storyboard: universal, array field on the reel document ---
 function saveShots(id, shots) {
-  db.collection('users').doc(currentUser.uid).collection('reels').doc(id).update({ 'stages.scripted.shots': shots }).catch(err => {
-    console.error('Storyboard save failed', err);
-  });
+  reelDocRef(id).update({ shots }).catch(err => console.error('Storyboard save failed', err));
 }
 
 function addShot(id) {
   const r = reels.find(x => x.id === id);
   if (!r) return;
-  const shots = r.stages.scripted.shots.slice();
-  shots.push({ description: '', type: SHOT_TYPES[0], audio: '', duration: null });
+  const shots = r.shots.slice();
+  shots.push(emptyShot());
   saveShots(id, shots);
 }
 
 function updateShot(id, index, field, rawValue) {
   const r = reels.find(x => x.id === id);
   if (!r) return;
-  const shots = r.stages.scripted.shots.slice();
+  const shots = r.shots.slice();
   if (!shots[index]) return;
   const value = field === 'duration' ? (rawValue === '' ? null : parseFloat(rawValue)) : rawValue;
   shots[index] = Object.assign({}, shots[index], { [field]: value });
@@ -603,7 +679,7 @@ function updateShot(id, index, field, rawValue) {
 function deleteShot(id, index) {
   const r = reels.find(x => x.id === id);
   if (!r) return;
-  const shots = r.stages.scripted.shots.slice();
+  const shots = r.shots.slice();
   shots.splice(index, 1);
   saveShots(id, shots);
 }
@@ -611,7 +687,7 @@ function deleteShot(id, index) {
 function moveShot(id, index, direction) {
   const r = reels.find(x => x.id === id);
   if (!r) return;
-  const shots = r.stages.scripted.shots.slice();
+  const shots = r.shots.slice();
   const newIndex = index + direction;
   if (newIndex < 0 || newIndex >= shots.length) return;
   const tmp = shots[index];
@@ -639,7 +715,7 @@ function undoDelete(id) {
 
 function commitDelete(id) {
   pendingDeletes.delete(id);
-  db.collection('users').doc(currentUser.uid).collection('reels').doc(id).delete().catch(err => {
+  reelDocRef(id).delete().catch(err => {
     console.error('Delete failed', err);
   });
 }
@@ -703,67 +779,116 @@ function render() {
       <div class="card-top">
         <div>
           <div class="code">${r.code || 'LVA-000'}</div>
-          <div class="card-title">${escapeHtml(r.title)}</div>
+          <div class="title-row">
+            ${editingTitleId === r.id ? `
+              <input class="title-input" id="titleInput-${r.id}" value="${escapeAttr(r.title)}"
+                onblur="saveTitleEdit('${r.id}', this.value)"
+                onkeydown="if(event.key==='Enter') this.blur()">
+            ` : `
+              <div class="card-title">${escapeHtml(r.title)}</div>
+              <button type="button" class="icon-btn-sm title-edit" onclick="startEditTitle('${r.id}')" aria-label="Edit title"><span class="material-symbols-outlined">edit</span></button>
+            `}
+            <span class="saved-indicator" id="saved-${r.id}-title"><span class="material-symbols-outlined">check</span></span>
+          </div>
         </div>
-        <div class="card-actions">
-          <button class="icon-btn edit" onclick="openEditModal('${r.id}')" aria-label="Edit"><span class="material-symbols-outlined">edit</span></button>
-          <button class="icon-btn del" onclick="deleteReel('${r.id}')" aria-label="Delete"><span class="material-symbols-outlined">delete</span></button>
-        </div>
+        <button class="icon-btn del" onclick="deleteReel('${r.id}')" aria-label="Delete"><span class="material-symbols-outlined">delete</span></button>
       </div>
       <div class="stage-row">
         ${STAGES.map((s, i) => chip(r.currentStage === i, s, `setStage('${r.id}', ${i})`)).join('')}
       </div>
       ${renderStageDetail(r)}
+      ${renderStoryboard(r)}
     </div>
   `).join('');
+
+  if (editingTitleId) {
+    const el = document.getElementById('titleInput-' + editingTitleId);
+    if (el) { el.focus(); el.select(); }
+  }
 }
 
-function stageTextarea(reelId, stageKey, field, label, value) {
-  return `<div class="stage-field">
-    <label>${label}</label>
-    <textarea onblur="saveStageField('${reelId}','${stageKey}','${field}', this.value)">${escapeHtml(value || '')}</textarea>
+function fieldLabel(label, indicatorKey) {
+  return `<label>${label}<span class="saved-indicator" id="saved-${indicatorKey}"><span class="material-symbols-outlined">check</span></span></label>`;
+}
+
+function textField(reelId, path, indicatorKey, label, value, multiline) {
+  const control = multiline
+    ? `<textarea oninput="onFieldInput('${reelId}','${path}','${indicatorKey}', this.value)" onblur="onFieldBlur('${reelId}','${path}','${indicatorKey}', this.value)">${escapeHtml(value || '')}</textarea>`
+    : `<input value="${escapeAttr(value || '')}" oninput="onFieldInput('${reelId}','${path}','${indicatorKey}', this.value)" onblur="onFieldBlur('${reelId}','${path}','${indicatorKey}', this.value)">`;
+  return `<div class="stage-field">${fieldLabel(label, indicatorKey)}${control}</div>`;
+}
+
+function selectField(reelId, path, indicatorKey, label, value, options) {
+  return `<div class="stage-field">${fieldLabel(label, indicatorKey)}
+    <select onchange="onFieldBlur('${reelId}','${path}','${indicatorKey}', this.value)">
+      <option value="" ${!value ? 'selected' : ''} disabled>Choose...</option>
+      ${options.map(o => `<option ${value === o ? 'selected' : ''}>${o}</option>`).join('')}
+    </select>
   </div>`;
 }
 
-function stageInput(reelId, stageKey, field, label, value) {
-  return `<div class="stage-field">
-    <label>${label}</label>
-    <input value="${escapeAttr(value || '')}" onblur="saveStageField('${reelId}','${stageKey}','${field}', this.value)">
-  </div>`;
+function checkboxField(reelId, path, indicatorKey, label, checked) {
+  return `<label class="checkbox-field">
+    <input type="checkbox" ${checked ? 'checked' : ''} onchange="onFieldBlur('${reelId}','${path}','${indicatorKey}', this.checked)">
+    <span class="checkbox-label">${label}</span>
+    <span class="saved-indicator" id="saved-${indicatorKey}"><span class="material-symbols-outlined">check</span></span>
+  </label>`;
 }
 
 function renderStageDetail(r) {
+  const id = r.id;
   const key = STAGE_KEYS[r.currentStage];
   const s = r.stages[key];
-  let fields = '';
-  if (key === 'scripted') fields += stageTextarea(r.id, key, 'hook', 'Hook line', s.hook);
-  fields += stageTextarea(r.id, key, 'notes', 'Notes', s.notes);
-  if (key === 'posted') {
-    fields += stageTextarea(r.id, key, 'caption', 'Caption', s.caption);
-    fields += stageInput(r.id, key, 'link', 'Link', s.link);
+
+  if (key === 'idea') {
+    return `<div class="stage-detail">
+      ${selectField(id, 'stages.idea.goal', id + '-idea-goal', 'Goal', s.goal, GOALS)}
+      ${textField(id, 'stages.idea.conceptNote', id + '-idea-conceptNote', 'Concept note', s.conceptNote, true)}
+    </div>`;
   }
-  const storyboard = key === 'scripted' ? renderStoryboardExpanded(r) : renderStoryboardCollapsed(r);
-  return `<div class="stage-detail">${fields}${storyboard}</div>`;
+  if (key === 'scripted') {
+    return `<div class="stage-detail">
+      ${textField(id, 'stages.scripted.hook', id + '-scripted-hook', 'Hook', s.hook, true)}
+      ${textField(id, 'stages.scripted.bodyOutline', id + '-scripted-bodyOutline', 'Body outline', s.bodyOutline, true)}
+      ${textField(id, 'stages.scripted.cta', id + '-scripted-cta', 'CTA', s.cta, true)}
+    </div>`;
+  }
+  if (key === 'filming') {
+    return `<div class="stage-detail">
+      ${textField(id, 'stages.filming.preShootNotes', id + '-filming-preShootNotes', 'Pre-shoot checklist (gear / location / lighting)', s.preShootNotes, true)}
+    </div>`;
+  }
+  if (key === 'editing') {
+    return `<div class="stage-detail">
+      ${textField(id, 'stages.editing.editNotes', id + '-editing-editNotes', 'Edit notes', s.editNotes, true)}
+      ${textField(id, 'stages.editing.captionKeywords', id + '-editing-captionKeywords', 'Caption keywords', s.captionKeywords, false)}
+    </div>`;
+  }
+  // posted
+  const c = s.checklist;
+  return `<div class="stage-detail">
+    <div class="checklist">
+      ${checkboxField(id, 'stages.posted.checklist.visualBounds', id + '-posted-cb-visualBounds', 'Visual bounds safety', c.visualBounds)}
+      ${checkboxField(id, 'stages.posted.checklist.coverAlignment', id + '-posted-cb-coverAlignment', 'Cover alignment', c.coverAlignment)}
+      ${checkboxField(id, 'stages.posted.checklist.captionsBurnedIn', id + '-posted-cb-captionsBurnedIn', 'Accessibility captions burned in', c.captionsBurnedIn)}
+      ${checkboxField(id, 'stages.posted.checklist.metaTagsLinked', id + '-posted-cb-metaTagsLinked', 'Exactly 3 meta tags linked', c.metaTagsLinked)}
+    </div>
+    ${textField(id, 'stages.posted.notes', id + '-posted-notes', 'Notes', s.notes, true)}
+    ${textField(id, 'stages.posted.caption', id + '-posted-caption', 'Final caption', s.caption, true)}
+    ${textField(id, 'stages.posted.link', id + '-posted-link', 'Post link', s.link, false)}
+  </div>`;
 }
 
-function renderStoryboardCollapsed(r) {
-  const shots = r.stages.scripted.shots || [];
-  const label = shots.length > 0 ? `Storyboard (${shots.length} shot${shots.length === 1 ? '' : 's'})` : '+ Add storyboard';
-  return `<button type="button" class="storyboard-toggle" onclick="setStage('${r.id}', 1)">
-    <span class="material-symbols-outlined" style="font-size:16px">movie</span>${label}
-  </button>`;
-}
-
-function renderStoryboardExpanded(r) {
-  const shots = r.stages.scripted.shots || [];
+function renderStoryboard(r) {
+  const shots = r.shots || [];
   const rows = shots.map((shot, i) => renderShotRow(r.id, i, shot, shots.length)).join('');
-  return `
+  return `<div class="storyboard-section">
     <div class="storyboard-title">Storyboard${shots.length ? ' (' + shots.length + ')' : ''}</div>
     <div class="storyboard">${rows}</div>
     <button type="button" class="storyboard-add" onclick="addShot('${r.id}')">
       <span class="material-symbols-outlined" style="font-size:16px">add</span>Add shot
     </button>
-  `;
+  </div>`;
 }
 
 function renderShotRow(reelId, i, shot, total) {
@@ -785,6 +910,10 @@ function renderShotRow(reelId, i, shot, total) {
         <input type="number" min="0" step="1" placeholder="sec" value="${shot.duration != null ? escapeAttr(String(shot.duration)) : ''}" onblur="updateShot('${reelId}', ${i}, 'duration', this.value)">
       </div>
       <input class="shot-audio" placeholder="Audio / VO line (optional)" value="${escapeAttr(shot.audio || '')}" onblur="updateShot('${reelId}', ${i}, 'audio', this.value)">
+      <label class="checkbox-field shot-captured">
+        <input type="checkbox" ${shot.captured ? 'checked' : ''} onchange="updateShot('${reelId}', ${i}, 'captured', this.checked)">
+        <span class="checkbox-label">Captured</span>
+      </label>
     </div>
   `;
 }
