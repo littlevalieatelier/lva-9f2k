@@ -98,6 +98,8 @@
 
   /* --- M3 filter chips: shared by the top filter row and each card's stage selector --- */
   .filter-row { display: flex; gap: 6px; overflow-x: auto; flex-wrap: nowrap; padding: 8px 16px 4px; -webkit-overflow-scrolling: touch; scrollbar-width: none; }
+  .filter-divider { width: 1px; height: 24px; align-self: center; background: var(--md-outline-variant); flex-shrink: 0; margin: 0 2px; }
+  .trash-icon { color: #C97A5D; font-size: 16px; } /* Terracotta icon only — label text inherits the same Pine-family color as every other chip, unselected or selected */
   .filter-row::-webkit-scrollbar { display: none; }
   .stage-row { display: flex; gap: 6px; margin-top: 16px; overflow-x: auto; padding-bottom: 2px; -webkit-overflow-scrolling: touch; scrollbar-width: none; }
   .stage-row::-webkit-scrollbar { display: none; }
@@ -926,9 +928,17 @@ function render() {
     </button>
   `;
 
+  const trashLabel = trashedReels.length > 0 ? 'Trash · ' + trashedReels.length : 'Trash';
+  const trashChip = `
+    <button class="chip trash-chip ${stageFilter === 'trash' ? 'selected' : ''}" onclick="setFilter('trash')">
+      <span class="material-symbols-outlined trash-icon">delete</span>${trashLabel}
+    </button>
+  `;
+
   filterRow.innerHTML = chip(stageFilter === 'all', 'All', "setFilter('all')") +
     STAGES.map((s, i) => chip(stageFilter === i, s, `setFilter(${i})`)).join('') +
-    chip(stageFilter === 'trash', 'Trash', "setFilter('trash')");
+    '<div class="filter-divider"></div>' +
+    trashChip;
 
   if (stageFilter === 'trash') {
     if (trashedReels.length === 0) {
