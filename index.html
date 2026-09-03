@@ -158,9 +158,10 @@
   /* --- M3 elevated card: level 1 resting, level 2 on hover/press, medium (12dp) shape --- */
   .card { background: var(--md-surface-container); border-radius: 12px; padding: 16px; box-shadow: var(--md-elevation-1); transition: box-shadow var(--md-duration-short) var(--md-easing-standard), background-color var(--md-duration-short) var(--md-easing-standard); }
   .card:hover, .card:active { box-shadow: var(--md-elevation-2); background: var(--md-surface-container-hover); }
-  .card-top { display: flex; justify-content: space-between; align-items: flex-start; gap: 8px; }
-  .code { display: inline-block; font: var(--type-label-medium); color: var(--md-on-primary-container); background: var(--md-primary-container); border-radius: 6px; padding: 3px 8px; letter-spacing: 0.03em; margin-bottom: 4px; }
-  .title-row { display: flex; align-items: center; gap: 2px; flex-wrap: wrap; }
+  .card-top { display: flex; justify-content: space-between; align-items: center; gap: 8px; }
+  .code { display: inline-block; font: var(--type-label-medium); color: var(--md-on-primary-container); background: var(--md-primary-container); border-radius: 6px; padding: 3px 8px; letter-spacing: 0.03em; }
+  .code + .card-title { margin-top: 4px; } /* Trash card: code sits directly above title there, unlike the main card */
+  .title-row { display: flex; align-items: center; gap: 2px; flex-wrap: wrap; margin-top: 4px; }
   .card-title { font: var(--type-title-medium); }
   .title-input { font: var(--type-title-medium); border: 1px solid var(--md-outline); border-radius: 6px; padding: 4px 8px; background: var(--md-surface-container); color: var(--md-on-surface); flex: 1; min-width: 120px; }
   .title-edit { color: var(--md-on-surface-variant); }
@@ -963,21 +964,19 @@ function render() {
   list.innerHTML = filtered.map(r => `
     <div class="card">
       <div class="card-top">
-        <div>
-          <div class="code">${r.code || 'LVA-000'}</div>
-          <div class="title-row">
-            ${editingTitleId === r.id ? `
-              <input class="title-input" id="titleInput-${r.id}" value="${escapeAttr(r.title)}"
-                onblur="saveTitleEdit('${r.id}', this.value)"
-                onkeydown="if(event.key==='Enter') this.blur()">
-            ` : `
-              <div class="card-title">${escapeHtml(r.title)}</div>
-              <button type="button" class="icon-btn-sm title-edit" onclick="startEditTitle('${r.id}')" aria-label="Edit title"><span class="material-symbols-outlined">edit</span></button>
-            `}
-            <span class="saved-indicator" id="saved-${r.id}-title"><span class="material-symbols-outlined">check</span></span>
-          </div>
-        </div>
+        <div class="code">${r.code || 'LVA-000'}</div>
         <button class="icon-btn del" onclick="deleteReel('${r.id}')" aria-label="Delete"><span class="material-symbols-outlined">delete</span></button>
+      </div>
+      <div class="title-row">
+        ${editingTitleId === r.id ? `
+          <input class="title-input" id="titleInput-${r.id}" value="${escapeAttr(r.title)}"
+            onblur="saveTitleEdit('${r.id}', this.value)"
+            onkeydown="if(event.key==='Enter') this.blur()">
+        ` : `
+          <div class="card-title">${escapeHtml(r.title)}</div>
+          <button type="button" class="icon-btn-sm title-edit" onclick="startEditTitle('${r.id}')" aria-label="Edit title"><span class="material-symbols-outlined">edit</span></button>
+        `}
+        <span class="saved-indicator" id="saved-${r.id}-title"><span class="material-symbols-outlined">check</span></span>
       </div>
       <div class="stage-row">
         ${STAGES.map((s, i) => chip(r.currentStage === i, s, `setStage('${r.id}', ${i})`)).join('')}
