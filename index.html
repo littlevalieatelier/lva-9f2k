@@ -164,6 +164,11 @@
   .icon-btn.del:hover { color: #C97A5D; background: #faece7; }
   .icon-btn .material-symbols-outlined { font-size: 20px; }
 
+  .trash-meta { font: var(--type-body-small); color: var(--md-on-surface-variant); margin-top: 4px; }
+  .trash-actions { display: flex; gap: 8px; margin-top: 12px; padding-top: 12px; border-top: 1px solid var(--md-outline-variant); }
+  .trash-actions .btn { flex: 1; }
+  .trash-forever:hover { color: #C97A5D; background: #faece7; }
+
   /* --- M3 buttons: filled (Create reel / Sign in), text (Cancel) --- */
   .btn { display: inline-flex; align-items: center; justify-content: center; gap: 6px; min-height: 40px; padding: 0 24px; border-radius: 999px; border: none; font: var(--type-label-large); cursor: pointer; transition: background-color var(--md-duration-short) var(--md-easing-standard); }
   .btn-filled { background: var(--md-primary); color: var(--md-on-primary); }
@@ -347,7 +352,6 @@ let currentUser = null;
 let isOffline = false;
 let unsubReels = null;
 let unsubCounter = null;
-let pendingDeletes = new Map();
 let snackbarTimeout = null;
 let pendingPrefill = null;
 let editingTitleId = null;
@@ -407,7 +411,29 @@ function normalizeReel(id, data) {
   const currentStage = typeof data.currentStage === 'number' ? data.currentStage
     : (typeof data.stage === 'number' ? data.stage : 0);
 
-  return { id, code: data.code, title: data.title, currentStage, shots, stages, createdAt: data.createdAt, _needsMigration: needsMigration };
+  const deletedAt = (data.deletedAt && typeof data.deletedAt.toMillis === 'function') ? data.deletedAt.toMillis() : null;
+
+  return { id, code: data.code, title: data.title, currentStage, shots, stages, createdAt: data.createdAt, deleted: !!data.deleted, deletedAt, _needsMigration: needsMigration };
+}
+
+const TRASH_RETENTION_MS = 14 * 24 * 60 * 60 * 1000;
+
+function purgeExpiredTrash() {
+  const now = Date.now();
+  const toPurge = reels.filter(r => r.deleted && r.deletedAt && (now - r.deletedAt) > TRASH_RETENTION_MS);
+  if (toPurge.length === 0) return;
+  const batch = db.batch();
+  toPurge.forEach(r => batch.delete(reelDocRef(r.id)));
+  batch.commit().catch(err => console.error('Auto-purge failed', err));
+}
+
+function formatTrashMeta(deletedAtMs) {
+  if (!deletedAtMs) return 'Deleted just now';
+  const daysAgo = Math.floor((Date.now() - deletedAtMs) / (24 * 60 * 60 * 1000));
+  const daysLeft = Math.max(0, 14 - daysAgo);
+  const agoText = daysAgo <= 0 ? 'today' : daysAgo === 1 ? '1 day ago' : daysAgo + ' days ago';
+  const leftText = daysLeft === 1 ? '1 day left' : daysLeft + ' days left';
+  return 'Deleted ' + agoText + ' · ' + leftText;
 }
 
 function migratePendingReels() {
@@ -530,6 +556,7 @@ function subscribeReels() {
     setOffline(snapshot.metadata.fromCache);
     render();
     migratePendingReels();
+    purgeExpiredTrash();
   }, err => {
     console.error('Reels listener error', err);
   });
@@ -696,28 +723,29 @@ function moveShot(id, index, direction) {
   saveShots(id, shots);
 }
 
+// Soft delete: the document is never removed here, just flagged. It disappears from every
+// non-Trash view immediately (render() filters on r.deleted) and stays recoverable in Trash
+// for 14 days (see purgeExpiredTrash). LVA-### codes are never reused, on purpose — the
+// nextReelNum counter is untouched by delete/restore/purge.
 function deleteReel(id) {
-  if (pendingDeletes.has(id)) return;
-  const timeoutId = setTimeout(() => commitDelete(id), 5000);
-  pendingDeletes.set(id, timeoutId);
-  render();
-  showSnackbar('Reel deleted', () => undoDelete(id));
+  reelDocRef(id).update({
+    deleted: true,
+    deletedAt: firebase.firestore.FieldValue.serverTimestamp()
+  }).catch(err => console.error('Delete failed', err));
+  showSnackbar('Reel deleted', () => restoreReel(id));
 }
 
-function undoDelete(id) {
-  const timeoutId = pendingDeletes.get(id);
-  if (timeoutId === undefined) return;
-  clearTimeout(timeoutId);
-  pendingDeletes.delete(id);
+function restoreReel(id) {
+  reelDocRef(id).update({
+    deleted: firebase.firestore.FieldValue.delete(),
+    deletedAt: firebase.firestore.FieldValue.delete()
+  }).catch(err => console.error('Restore failed', err));
   hideSnackbar();
-  render();
 }
 
-function commitDelete(id) {
-  pendingDeletes.delete(id);
-  reelDocRef(id).delete().catch(err => {
-    console.error('Delete failed', err);
-  });
+function hardDeleteReel(id) {
+  if (!confirm('Permanently delete this reel? This cannot be undone.')) return;
+  reelDocRef(id).delete().catch(err => console.error('Permanent delete failed', err));
 }
 
 function showSnackbar(message, onAction) {
@@ -745,10 +773,13 @@ function render() {
   const stats = document.getElementById('stats');
   const filterRow = document.getElementById('filterRow');
 
-  const posted = reels.filter(r => r.currentStage === 4).length;
-  const inProgress = reels.length - posted;
+  const activeReels = reels.filter(r => !r.deleted);
+  const trashedReels = reels.filter(r => r.deleted);
+
+  const posted = activeReels.filter(r => r.currentStage === 4).length;
+  const inProgress = activeReels.length - posted;
   stats.innerHTML = `
-    <div class="stat"><div class="n">${reels.length}</div><div class="l">Total</div></div>
+    <div class="stat"><div class="n">${activeReels.length}</div><div class="l">Total</div></div>
     <div class="stat"><div class="n">${inProgress}</div><div class="l">In progress</div></div>
     <div class="stat"><div class="n">${posted}</div><div class="l">Posted</div></div>
   `;
@@ -760,12 +791,21 @@ function render() {
   `;
 
   filterRow.innerHTML = chip(stageFilter === 'all', 'All', "setFilter('all')") +
-    STAGES.map((s, i) => chip(stageFilter === i, s, `setFilter(${i})`)).join('');
+    STAGES.map((s, i) => chip(stageFilter === i, s, `setFilter(${i})`)).join('') +
+    chip(stageFilter === 'trash', 'Trash', "setFilter('trash')");
 
-  const filtered = (stageFilter === 'all' ? reels : reels.filter(r => r.currentStage === stageFilter))
-    .filter(r => !pendingDeletes.has(r.id));
+  if (stageFilter === 'trash') {
+    if (trashedReels.length === 0) {
+      list.innerHTML = '<div class="empty">Trash is empty.</div>';
+      return;
+    }
+    list.innerHTML = trashedReels.map(renderTrashCard).join('');
+    return;
+  }
 
-  if (reels.length === 0) {
+  const filtered = stageFilter === 'all' ? activeReels : activeReels.filter(r => r.currentStage === stageFilter);
+
+  if (activeReels.length === 0) {
     list.innerHTML = '<div class="empty">No reels yet. Tap "New reel" to plan your first one.</div>';
     return;
   }
@@ -805,6 +845,22 @@ function render() {
     const el = document.getElementById('titleInput-' + editingTitleId);
     if (el) { el.focus(); el.select(); }
   }
+}
+
+function renderTrashCard(r) {
+  return `<div class="card">
+    <div class="card-top">
+      <div>
+        <div class="code">${r.code || 'LVA-000'}</div>
+        <div class="card-title">${escapeHtml(r.title)}</div>
+        <div class="trash-meta">${formatTrashMeta(r.deletedAt)}</div>
+      </div>
+    </div>
+    <div class="trash-actions">
+      <button type="button" class="btn btn-text" onclick="restoreReel('${r.id}')">Restore</button>
+      <button type="button" class="btn btn-text trash-forever" onclick="hardDeleteReel('${r.id}')">Delete forever</button>
+    </div>
+  </div>`;
 }
 
 function fieldLabel(label, indicatorKey) {
