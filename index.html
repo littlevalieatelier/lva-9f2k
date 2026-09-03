@@ -246,6 +246,15 @@
   .modal-bg.open .modal { transform: translateY(0); }
   .modal h2 { font: var(--type-title-large); margin-bottom: 16px; }
 
+  /* --- Destructive confirmation: Ivory surface, Terracotta accent bar + icon only, never a Terracotta fill --- */
+  .confirm-modal { border-left: 4px solid #C97A5D; }
+  .confirm-header { display: flex; align-items: flex-start; gap: 12px; }
+  .confirm-header h2 { margin-bottom: 4px; }
+  .confirm-icon { color: #C97A5D; font-size: 24px; flex-shrink: 0; margin-top: 2px; }
+  .confirm-message { font: var(--type-body-medium); color: var(--md-on-surface); }
+  .btn-destructive { background: #C97A5D; color: #380D00; } /* verified 5.24:1 — Pine (4.25:1) and white (3.27:1) both fail 4.5:1 at this text size */
+  .btn-destructive:hover { background: color-mix(in srgb, #C97A5D 90%, black); }
+
   @media (min-width: 640px) {
     #app { max-width: 720px; }
     .list { grid-template-columns: 1fr 1fr; display: grid; }
@@ -316,6 +325,22 @@
     <div class="modal-actions">
       <button class="btn btn-text" onclick="closeModal()">Cancel</button>
       <button class="btn btn-filled" onclick="saveReel()">Create reel</button>
+    </div>
+  </div>
+</div>
+
+<div class="modal-bg" id="confirmModalBg">
+  <div class="modal confirm-modal">
+    <div class="confirm-header">
+      <span class="material-symbols-outlined confirm-icon">warning</span>
+      <div>
+        <h2 id="confirmTitle">Delete this reel?</h2>
+        <p class="confirm-message" id="confirmMessage"></p>
+      </div>
+    </div>
+    <div class="modal-actions">
+      <button class="btn btn-text" onclick="closeConfirmModal()">Cancel</button>
+      <button class="btn btn-destructive" id="confirmActionBtn" onclick="runConfirmAction()">Delete</button>
     </div>
   </div>
 </div>
@@ -791,11 +816,44 @@ function deleteFilmingItem(id, index) {
   saveFilmingChecklist(id, checklist);
 }
 
+// --- Destructive-action confirmation modal, shared by soft-delete and hard-delete ---
+let confirmAction = null;
+
+function openConfirmModal(title, message, confirmLabel, action) {
+  document.getElementById('confirmTitle').textContent = title;
+  document.getElementById('confirmMessage').textContent = message;
+  document.getElementById('confirmActionBtn').textContent = confirmLabel;
+  confirmAction = action;
+  document.getElementById('confirmModalBg').classList.add('open');
+}
+
+function closeConfirmModal() {
+  document.getElementById('confirmModalBg').classList.remove('open');
+  confirmAction = null;
+}
+
+function runConfirmAction() {
+  const action = confirmAction;
+  closeConfirmModal();
+  if (action) action();
+}
+
 // Soft delete: the document is never removed here, just flagged. It disappears from every
 // non-Trash view immediately (render() filters on r.deleted) and stays recoverable in Trash
 // for 14 days (see purgeExpiredTrash). LVA-### codes are never reused, on purpose — the
 // nextReelNum counter is untouched by delete/restore/purge.
 function deleteReel(id) {
+  const r = reels.find(x => x.id === id);
+  const title = r ? r.title : 'this reel';
+  openConfirmModal(
+    'Delete this reel?',
+    'Moves "' + title + '" to Trash. You can restore it within 14 days.',
+    'Delete',
+    () => confirmDeleteReel(id)
+  );
+}
+
+function confirmDeleteReel(id) {
   reelDocRef(id).update({
     deleted: true,
     deletedAt: firebase.firestore.FieldValue.serverTimestamp()
@@ -812,7 +870,17 @@ function restoreReel(id) {
 }
 
 function hardDeleteReel(id) {
-  if (!confirm('Permanently delete this reel? This cannot be undone.')) return;
+  const r = reels.find(x => x.id === id);
+  const title = r ? r.title : 'this reel';
+  openConfirmModal(
+    'Permanently delete this reel?',
+    'Deletes "' + title + '" forever. This cannot be undone.',
+    'Delete forever',
+    () => confirmHardDelete(id)
+  );
+}
+
+function confirmHardDelete(id) {
   reelDocRef(id).delete().catch(err => console.error('Permanent delete failed', err));
 }
 
