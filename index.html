@@ -123,7 +123,12 @@
   .checkbox-field { display: flex; align-items: center; gap: 8px; padding: 6px 0; cursor: pointer; }
   .checkbox-field input[type="checkbox"] { width: 18px; height: 18px; accent-color: var(--md-tertiary); cursor: pointer; flex-shrink: 0; }
   .checkbox-field .checkbox-label { font: var(--type-body-medium); color: var(--md-on-surface); flex: 1; }
+  .checkbox-label.checked { text-decoration: line-through; opacity: 0.55; }
   .checklist { display: flex; flex-direction: column; }
+  .checklist-item { display: flex; align-items: center; gap: 4px; }
+  .checklist-item .checkbox-field { flex: 1; }
+  .checklist-add-row { display: flex; gap: 6px; margin-top: 4px; }
+  .checklist-add-row input { flex: 1; border: 1px solid var(--md-outline); border-radius: 8px; padding: 8px 10px; font: var(--type-body-medium); background: var(--md-surface-container); color: var(--md-on-surface); }
 
   .storyboard-title { font: var(--type-label-large); color: var(--md-on-surface); margin-top: 4px; }
   .storyboard { display: flex; flex-direction: column; gap: 8px; margin-top: 8px; }
@@ -358,11 +363,19 @@ let editingTitleId = null;
 let debounceTimers = {};
 let savedIndicatorTimers = {};
 
+const FILMING_DEFAULTS = ['Camera charged', 'SD card cleared', 'Tripod packed', 'Lighting checked', 'Location confirmed'];
+
+function buildFilmingChecklist(legacyText) {
+  const items = FILMING_DEFAULTS.map(text => ({ text, checked: false }));
+  if (legacyText) items.push({ text: legacyText, checked: false });
+  return items;
+}
+
 function emptyStages() {
   return {
     idea: { goal: '', conceptNote: '' },
     scripted: { hook: '', bodyOutline: '', cta: '' },
-    filming: { preShootNotes: '' },
+    filming: { checklist: buildFilmingChecklist('') },
     editing: { editNotes: '', captionKeywords: '' },
     posted: { notes: '', caption: '', link: '', checklist: { visualBounds: false, coverAlignment: false, captionsBurnedIn: false, metaTagsLinked: false } }
   };
@@ -375,11 +388,15 @@ function emptyShot() {
 // Reels can currently arrive in any of three shapes: flat legacy (title/hook/notes/stage),
 // the "V1" nested shape shipped previously (stages.idea.notes, stages.scripted.{hook,notes,shots}, ...),
 // or the current shape. normalizeReel() always returns the current shape and flags whether
-// the source doc still needs to be migrated in Firestore.
+// the source doc still needs to be migrated in Firestore. Filming is migrated independently of
+// the outer shape: it moves from a free-text preShootNotes field to a checklist array, so any
+// existing free text is preserved as an extra unchecked item appended after the 5 defaults
+// rather than being silently dropped.
 function normalizeReel(id, data) {
   const stages = emptyStages();
   let shots = null;
   let needsMigration = true;
+  let filmingLegacyText = '';
 
   if (data.stages && data.stages.idea && typeof data.stages.idea.conceptNote === 'string') {
     // Already current shape — merge onto the scaffold defensively in case a doc predates a field.
@@ -390,11 +407,17 @@ function normalizeReel(id, data) {
     );
     needsMigration = false;
     shots = Array.isArray(data.shots) ? data.shots : [];
+
+    const srcFilming = data.stages.filming || {};
+    if (!Array.isArray(srcFilming.checklist)) {
+      filmingLegacyText = typeof srcFilming.preShootNotes === 'string' ? srcFilming.preShootNotes.trim() : '';
+      needsMigration = true;
+    }
   } else if (data.stages) {
     // V1 nested shape.
     stages.idea.conceptNote = (data.stages.idea && data.stages.idea.notes) || '';
     stages.scripted.hook = (data.stages.scripted && data.stages.scripted.hook) || '';
-    stages.filming.preShootNotes = (data.stages.filming && data.stages.filming.notes) || '';
+    filmingLegacyText = (data.stages.filming && data.stages.filming.notes) || '';
     stages.editing.editNotes = (data.stages.editing && data.stages.editing.notes) || '';
     stages.posted.notes = (data.stages.posted && data.stages.posted.notes) || '';
     stages.posted.caption = (data.stages.posted && data.stages.posted.caption) || '';
@@ -406,6 +429,11 @@ function normalizeReel(id, data) {
     stages.idea.conceptNote = data.notes || '';
     shots = [];
   }
+
+  if (needsMigration) {
+    stages.filming.checklist = buildFilmingChecklist(filmingLegacyText);
+  }
+  delete stages.filming.preShootNotes;
 
   shots = shots.map(s => Object.assign(emptyShot(), s));
   const currentStage = typeof data.currentStage === 'number' ? data.currentStage
@@ -723,6 +751,46 @@ function moveShot(id, index, direction) {
   saveShots(id, shots);
 }
 
+// --- Filming pre-shoot checklist: same array-on-document, immediate-save pattern as shots ---
+function saveFilmingChecklist(id, checklist) {
+  reelDocRef(id).update({ 'stages.filming.checklist': checklist }).catch(err => console.error('Filming checklist save failed', err));
+  showSavedIndicator(id + '-filming-checklist');
+}
+
+function toggleFilmingItem(id, index, checked) {
+  const r = reels.find(x => x.id === id);
+  if (!r) return;
+  const checklist = r.stages.filming.checklist.slice();
+  if (!checklist[index]) return;
+  checklist[index] = Object.assign({}, checklist[index], { checked });
+  saveFilmingChecklist(id, checklist);
+}
+
+function addFilmingItem(id, text) {
+  const r = reels.find(x => x.id === id);
+  if (!r || !text) return;
+  const checklist = r.stages.filming.checklist.slice();
+  checklist.push({ text, checked: false });
+  saveFilmingChecklist(id, checklist);
+}
+
+function addFilmingItemFromInput(id) {
+  const input = document.getElementById('newFilmingItem-' + id);
+  if (!input) return;
+  const text = input.value.trim();
+  if (!text) return;
+  input.value = '';
+  addFilmingItem(id, text);
+}
+
+function deleteFilmingItem(id, index) {
+  const r = reels.find(x => x.id === id);
+  if (!r) return;
+  const checklist = r.stages.filming.checklist.slice();
+  checklist.splice(index, 1);
+  saveFilmingChecklist(id, checklist);
+}
+
 // Soft delete: the document is never removed here, just flagged. It disappears from every
 // non-Trash view immediately (render() filters on r.deleted) and stays recoverable in Trash
 // for 14 days (see purgeExpiredTrash). LVA-### codes are never reused, on purpose — the
@@ -911,7 +979,7 @@ function renderStageDetail(r) {
   }
   if (key === 'filming') {
     return `<div class="stage-detail">
-      ${textField(id, 'stages.filming.preShootNotes', id + '-filming-preShootNotes', 'Pre-shoot checklist (gear / location / lighting)', s.preShootNotes, true)}
+      ${renderFilmingChecklist(r)}
     </div>`;
   }
   if (key === 'editing') {
@@ -932,6 +1000,29 @@ function renderStageDetail(r) {
     ${textField(id, 'stages.posted.notes', id + '-posted-notes', 'Notes', s.notes, true)}
     ${textField(id, 'stages.posted.caption', id + '-posted-caption', 'Final caption', s.caption, true)}
     ${textField(id, 'stages.posted.link', id + '-posted-link', 'Post link', s.link, false)}
+  </div>`;
+}
+
+function renderFilmingChecklist(r) {
+  const id = r.id;
+  const checklist = r.stages.filming.checklist || [];
+  const indicatorKey = id + '-filming-checklist';
+  const rows = checklist.map((item, i) => `
+    <div class="checklist-item">
+      <label class="checkbox-field">
+        <input type="checkbox" ${item.checked ? 'checked' : ''} onchange="toggleFilmingItem('${id}', ${i}, this.checked)">
+        <span class="checkbox-label${item.checked ? ' checked' : ''}">${escapeHtml(item.text)}</span>
+      </label>
+      <button type="button" class="icon-btn-sm" onclick="deleteFilmingItem('${id}', ${i})" aria-label="Delete item"><span class="material-symbols-outlined">close</span></button>
+    </div>
+  `).join('');
+  return `<div class="stage-field">
+    ${fieldLabel('Pre-shoot checklist', indicatorKey)}
+    <div class="checklist">${rows}</div>
+    <div class="checklist-add-row">
+      <input id="newFilmingItem-${id}" placeholder="Add item..." onkeydown="if(event.key==='Enter'){addFilmingItemFromInput('${id}')}">
+      <button type="button" class="icon-btn-sm" onclick="addFilmingItemFromInput('${id}')" aria-label="Add item"><span class="material-symbols-outlined">add</span></button>
+    </div>
   </div>`;
 }
 
